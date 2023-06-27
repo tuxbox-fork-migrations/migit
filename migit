@@ -1,0 +1,465 @@
+#!/bin/bash
+
+VERSION="0.1"
+VERSION_STRING="$VERSION Copyright (C) 2023 Thilo Graf, License: GPL2"
+
+#set -e
+#set -x
+
+TRUE="1"
+FALSE="0"
+
+# Default values for the variables
+TARGET_REPO_PREFIX=""
+TARGET_REPO_SUFFIX=""
+GIT_SRC_COMMIT_URL_PREFIX=""
+GIT_PROJECT_NAME=""
+GIT_COMMIT_INTRO=""
+NO_BACKUPS="$FALSE"
+
+CUR_DIR=$(pwd)
+WORKDIR=$CUR_DIR/work
+ORIGIN_REPO_NAME=".origin-tmp"
+GIT_TEMP_REPO="$WORKDIR/$ORIGIN_REPO_NAME"
+GIT_WORKING_COPY_DIR=$WORKDIR/origin
+DEPLOY_DIR="$CUR_DIR/deploy"
+MAILMAP_FILE="$CUR_DIR/.mailmap"
+MESSAGES_REWRITE="$TRUE"
+
+REPOLIST=""
+EXCLUDE_REPOLIST=""
+GIT_FILTER_REPO_NAME="git-filter-repo"
+GIT_FILTER_REPO_EXEC=$(which git-filter-repo)
+
+ERRORS=""
+WARNINGS=""
+NOTES=""
+
+# Function to display script help
+show_help() {
+	echo
+	echo " -------------------------------------------------------------------"
+	echo " $(basename "$0")"
+	echo " Version: $VERSION_STRING"
+	echo " Script tool for rewriting Git repositories or extracting"
+	echo " repository subdirectories based on $GIT_FILTER_REPO_NAME."
+	echo " -------------------------------------------------------------------"
+	echo
+	echo " Usage:"
+	echo "  $0 -u <clone url> [options]             Clone URL of the Git repository to be rewritten (required!)"
+	echo
+	echo " Options:"
+	echo "  -P, --pattern-source-url=<pattern>      Pattern prefix for the source commit URL. This sets the entry for the link to the source commit, which is prepended to the commit ID."
+	echo "  -T, --target-root-project-name=<name>   Name of the target folder within the deploy directory. Default: Current date and time of the rewrite."
+	echo "  -p, --project-name-prefix=<prefix>      Prefix of the target folder to be prepended to the extracted repository name."
+	echo "  -s, --project-name-suffix=<suffix>      Suffix of the target folder to be appended to the extracted repository name."
+	echo "  -S, --subdir                            Subdirectory to be rewritten."
+	echo "                                          If a complete root directory, meaning the repository at once, should be rewritten, specify only a dot without any further directories '--subdir .'"
+	echo "  -n, --no-rewrite-messages               Do not rewrite commit messages. Paths will still be rewritten, and if a .mailmap file is available, authors will also be rewritten."
+	echo "      --subdir-list=<list>                Directory list to be rewritten. The list must be enclosed in ''. Use spaces as separators (Default: All subdirectories of the first level within the root directory)"
+	echo "      --exclude-subdir-list=<list>        Subdirectories that should not be extracted. The list must be enclosed in ''. Use spaces as separators."
+	echo "                                          Useful if the --subdir-list= option was not specified or left empty."
+	echo "      --commit-introduction=<pattern>     Pattern for commit introductions in the first line of all commits. Default: the respective subdirectory name or the original repo name."
+	echo "                                          This only makes sense if a single repo is to be rewritten or if a consistent introduction of the commit message is desired."
+	echo "  -d, --deploy-dir=<dir>                  Output directory in which the rewritten repositories will be placed. Default: $DEPLOY_DIR"
+	echo "  -m, --mailmap-file=<path>               Path to the mailmap file. If not specified, it will be searched for in the script folder by default. If no .mailmap file is found, author normalization will be skipped."
+	echo "      --no-backups                        Older extracted repositories will be overwritten. Only the latest extracted repositories are always stored in the deployment folder."
+	echo
+	echo "      --version                           Show $(basename "$0") version"
+	echo "  -h, --help                              Show this help"
+}
+
+# Check if git-filter-repo is available.
+if command -v $GIT_FILTER_REPO_EXEC &> /dev/null; then
+	GIT_FILTER_REPO_EXEC+=" --quiet --prune-empty auto"
+else
+	echo " -------------------------------------------------------------------"
+	echo " $GIT_FILTER_REPO_NAME is not installed."
+	echo " Make sure $GIT_FILTER_REPO_NAME is installed."
+	echo " https://github.com/newren/$GIT_FILTER_REPO_NAME#how-do-i-install-it"
+	echo " -------------------------------------------------------------------"
+	echo
+	show_help
+	exit 1
+fi
+
+# Process the options
+while [[ $# -gt 0 ]]; do
+	key="$1"
+
+	case $key in
+		-u|--clone-url)
+		GIT_SOURCE_URL="$2"
+		shift
+		shift
+		;;
+		-n|--no-rewrite-messages)
+		MESSAGES_REWRITE="$FALSE"
+		shift
+		shift
+		;;
+		--no-backup|--no-backups)
+		NO_BACKUPS="$TRUE"
+		NOTES+="Backups are disabled!"
+		shift
+		shift
+		;;
+		--clone-url=*)
+		GIT_SOURCE_URL="${key#*=}"
+		shift
+		;;
+		-P|--pattern-source-url)
+		GIT_SRC_COMMIT_URL_PREFIX="$2"
+		shift
+		shift
+		;;
+		--pattern-source-url=*)
+		GIT_SRC_COMMIT_URL_PREFIX="${key#*=}"
+		shift
+		;;
+		-T|--target-root-project-name)
+		GIT_PROJECT_NAME="$2"
+		shift
+		shift
+		;;
+		--target-root-project-name=*)
+		GIT_PROJECT_NAME="${key#*=}"
+		shift
+		;;
+		-p|--project-name-prefix)
+		TARGET_REPO_PREFIX="$2"
+		shift
+		shift
+		;;
+		--project-name-prefix=*)
+		TARGET_REPO_PREFIX="${key#*=}"
+		shift
+		;;
+		-s|--project-name-suffix)
+		TARGET_REPO_SUFFIX="$2"
+		shift
+		shift
+		;;
+		--project-name-suffix=*)
+		TARGET_REPO_SUFFIX="${key#*=}"
+		shift
+		;;
+		-S|--subdir)
+		REPOLIST="$2"
+		shift
+		shift
+		;;
+		--subdir-list=*)
+		REPOLIST="${key#*=}"
+		shift
+		;;
+		--exclude-subdir-list=*)
+		EXCLUDE_REPOLIST="${key#*=}"
+		shift
+		;;
+		--commit-introductiont=*)
+		GIT_COMMIT_INTRO="${key#*=}"
+		shift
+		shift
+		;;
+		-d|--deploy-dir)
+		DEPLOY_DIR="$2"
+		shift
+		shift
+		;;
+		--deploy-dir=*)
+		DEPLOY_DIR="${key#*=}"
+		shift
+		;;
+		-m)
+		MAILMAP_FILE="$2"
+		shift
+		shift
+		;;
+		--mailmap-file=*)
+		MAILMAP_FILE="${key#*=}"
+		shift
+		;;
+		-h|--help)
+		show_help
+		exit 0
+		;;
+		--version)
+		echo $VERSION
+		exit 0
+		;;
+		*)
+		echo "$0: Invalid option: $key" >&2
+		show_help
+		exit 1
+		;;
+	esac
+done
+
+# Check if the required options are provided
+if [[ -z "$GIT_SOURCE_URL" ]]; then
+	echo "Clone URL was not specified."
+	show_help
+	exit 1
+fi
+
+# Create deploy directory
+mkdir -p $DEPLOY_DIR
+
+# Get the original repository, delete it if already exists, it must be fresh
+if [ -d $GIT_TEMP_REPO/.git ]; then
+	rm -rf $GIT_TEMP_REPO 
+fi
+
+# Function to display a spinner while a process is running
+function show_spinner() {
+local pid=$1
+local message=$2
+local spinner="/-\|"
+
+while kill -0 $pid 2>/dev/null; do
+	for i in $(seq 0 3); do
+		echo -ne "\r[${spinner:$i:1}] $message"
+		sleep 0.1
+	done
+done
+
+wait $pid
+
+if [ $? -eq 0 ]; then
+	echo -ne "\r[\e[32m✓\e[0m] $message\n"
+else
+	echo -ne "\r[\e[33m✗\e[0m] $message Error!\n"
+	local error_code=$?
+	echo -ne "\r[\e[33m✗\e[0m] $message Error: $error_code"
+fi
+}
+
+# clone...
+echo -n "[ ] clone: $GIT_SOURCE_URL"
+git clone $GIT_SOURCE_URL $GIT_TEMP_REPO > /dev/null 2>&1 &
+spinner_pid=$!
+
+show_spinner $spinner_pid "clone"
+
+
+# Cleanup if necessary
+if [ -d $GIT_WORKING_COPY_DIR ]; then
+	rm -rf $GIT_WORKING_COPY_DIR
+fi
+
+# Create a working copy from the original repo
+cp -rf $GIT_TEMP_REPO $GIT_WORKING_COPY_DIR
+
+# Switch to the temporary repository
+cd $GIT_TEMP_REPO
+
+# Create a repository list for subdirectories to be imported.
+# If the list is empty, all subdirectories of the first level will be added.
+if [[ -z "$REPOLIST" ]]; then
+	REPOLIST=$(ls -d */ | sed 's#/##')
+fi
+
+## Handle Exclude List
+# Remove entries from EXCLUDE_REPOLIST from REPOLIST
+for entry in $EXCLUDE_REPOLIST; do
+	REPOLIST=$(echo "$REPOLIST" | sed "s|$entry|""|g")
+done
+## end Exclude List
+
+## set project name
+if [[ "$GIT_PROJECT_NAME" == "" ]]; then
+	GIT_PROJECT_NAME=$(basename $GIT_SOURCE_URL | sed 's/\.git//')
+fi
+
+## Clean up older project symlink before create new link to latest result
+if [[ -e "$DEPLOY_DIR/$GIT_PROJECT_NAME" ]]; then
+	unlink $DEPLOY_DIR/$GIT_PROJECT_NAME
+fi
+
+## remove older deployed project repos if backups are disabled
+if [[ "$NO_BACKUPS" == "$TRUE" ]]; then
+	rm -rf $DEPLOY_DIR/$GIT_PROJECT_NAME-*
+fi
+
+## set time stamp
+TIME_STAMP="$(date +%Y-%m%d-%H%M%S)"
+
+## create result directory inside deploy directory
+mkdir -p $DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP
+
+## start rewriting
+for SUBDIR in $REPOLIST; do
+	# Ensure a fresh working copy is available because it won't exist after the loop
+	cp -rf $GIT_TEMP_REPO $GIT_WORKING_COPY_DIR
+
+	# Ensure we are in the working copy
+	cd $GIT_WORKING_COPY_DIR
+
+	# ...set repo name if only origin is output
+	if [[ "$SUBDIR" == "." ]]; then
+		# Create the original repo name from the original clone URL
+		# Remove .git extension from URL
+		GIT_SOURCE=$(echo "$GIT_SOURCE_URL" | sed 's/\.git$//')
+		REPO_NAME="${TARGET_REPO_PREFIX}$(basename $GIT_SOURCE)${TARGET_REPO_SUFFIX}"
+	else
+		# Assemble the target folder name. This is the repo that will be generated from the subdirectory.
+		REPO_NAME="${TARGET_REPO_PREFIX}$(basename $SUBDIR)${TARGET_REPO_SUFFIX}"
+	fi
+
+
+	echo -ne "\nprocessing $REPO_NAME...\n"
+
+	if [ ! -d $SUBDIR ]; then
+		ERR_NOSUBDIR="$SUBDIR not found!"
+		echo -ne "\r[\e[33m✗\e[0m] Error: $ERR_NOSUBDIR\n"
+		ERRORS+=" - $ERR_NOSUBDIR"
+		continue
+	fi
+
+	PATH_OPTION="--path $SUBDIR --target . --path-rename $SUBDIR/:"
+		if [[ "$SUBDIR" == "." ]]; then
+		PATH_OPTION=
+	fi
+	
+	MAILMAP_OPTION=""
+
+	if [ -f $MAILMAP_FILE ]; then
+		MAILMAP_OPTION="--mailmap $MAILMAP_FILE"
+	else
+		if [[ "$MAILMAP_FILE" != "" ]]; then
+			WARN_NOMAILMAP="Mailmap file not found!"
+			echo -ne "\r[\e[33m✗\e[0m] Warning: $WARN_NOMAILMAP\n"
+			WARNINGS+=" - $WARN_NOMAILMAP"
+		fi
+	fi
+
+	GIT_FILTER_REPO_OPTS="--force  $MAILMAP_OPTION $PATH_OPTION" 
+	#  echo "$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS"
+	#  exit 0
+
+	# Adjust commit messages, include origin data, and normalize author names with emails
+	if [[ "$MESSAGES_REWRITE" != "$TRUE" ]]; then
+		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS --refs HEAD> /dev/null 2>&1 &
+		spinner_pid=$!
+		show_spinner $spinner_pid "rewriting"
+		NOTES+="Commit messages not rewritten"
+	else
+		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS --commit-callback '
+		import datetime
+
+		# Some texts seem to be somehow broken, so here, for safety, replace umlauts with ASCII, 
+		# noticed with the old forked plugins.
+		# However, they were also pretty messy or even empty.
+		commit.message = commit.message.replace(b"\xfc", b"ue")
+		commit.message = commit.message.replace(b"\xe4", b"ae")
+		commit.message = commit.message.replace(b"\xf6", b"oe")
+		commit.message = commit.message.replace(b"\xdc", b"Ue")
+		commit.message = commit.message.replace(b"\xc4", b"Ae")
+		commit.message = commit.message.replace(b"\xdf", b"sz")
+		commit.message = commit.message.replace(b"\xd6", b"Oe")
+
+		# Preserve original message
+		origin_message = commit.message
+
+		# Add an empty line
+		commit.message = commit.message + b"\n\n" \
+
+		# Generate new message data
+		# Determine and add the branch
+		commit.message += b"Origin commit data\n------------------\n"
+		b"Branch: " + b"'$(git symbolic-ref HEAD)'" + b"\n"
+
+		# Add the link to the source commit
+		if "'$GIT_SRC_COMMIT_URL_PREFIX'" != "":
+		    commit.message += b"Commit: '$GIT_SRC_COMMIT_URL_PREFIX'/" + commit.original_id + b"\n"
+
+		# Add author, date, and origin message
+		commit.message += b"Author: " + commit.author_name + b" <" + commit.author_email + b">\n" + \
+		b"Date:   " + (datetime.datetime.fromtimestamp(int(commit.author_date.split()[0])).strftime("%Y-%m-%d (%a, %d %b %Y)") + "\n").encode() + \
+		b"\n" + \
+		b"Origin message was:\n------------------\n" + origin_message
+
+		# Clean up, remove unnecessary characters
+		commit.message = commit.message.decode("utf-8").replace("   ", " ").encode("utf-8")
+		commit.message = commit.message.decode("utf-8").replace("  ", " ").encode("utf-8")
+		commit.message = commit.message.decode("utf-8").lstrip("-").encode("utf-8");
+		commit.message = commit.message.decode("utf-8").lstrip(" ").encode("utf-8");
+		commit.message = commit.message.decode("utf-8").encode("utf-8")
+
+		# Adjust the introduction
+		if "'$SUBDIR'" != ".":
+		    commit.message = commit.message.decode("utf-8").replace("'$SUBDIR':", "").encode("utf-8")
+		    commit.message = b"'$(basename $SUBDIR)': " + commit.message
+
+		# Final cleanup and finish, references will be cleaned up from the history as well
+		commit.message = commit.message.decode("utf-8").replace("  ", " ").encode("utf-8")
+		' --refs HEAD > /dev/null 2>&1 &
+		spinner_pid=$!
+		show_spinner $spinner_pid "rewriting"
+	fi
+	
+	# Cleanup
+	echo -n "[ ] cleanup"
+	rm -rf $GIT_WORKING_COPY_DIR/$ORIGIN_REPO_NAME
+	if [ $? -eq 0 ]; then
+		echo -ne "\r[\e[32m✓\e[0m] cleanup\n"
+	else
+		echo -ne "\r[\e[33m✗\e[0m] Error!\n"
+		error_code=$?
+		echo -ne "\r[\e[33m✗\e[0m] Error: $error_code"
+		$ERRORS+="$error_code - $error_description"
+		break
+	fi
+	
+	cd $WORKDIR
+
+	## Prepare and move everything into the deploy directory...
+	echo -n "[ ] deploy"
+
+	# ...move results from working directory into project directory	
+	mv $GIT_WORKING_COPY_DIR $DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP/$REPO_NAME
+
+	if [ $? -eq 0 ]; then
+		echo -ne "\r[\e[32m✓\e[0m] deploy\n"
+		generated_repos+=" - $REPO_NAME\n"
+	else
+		echo -ne "\r[\e[33m✗\e[0m] Error!\n"
+		error_code=$?
+		echo -ne "\r[\e[33m✗\e[0m] Error: $error_code"
+		$ERRORS+="$error_code - $error_description"
+		break
+	fi
+done
+
+## Finally create symlink which is pointing to last created project name.
+ln -sf $DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP $DEPLOY_DIR/$GIT_PROJECT_NAME
+
+## show results
+echo -e "\n------------------------------------------"
+entry_count=$(grep -o ' - ' <<< "$generated_repos" | wc -l)
+echo "Processed: $entry_count directories"
+echo -e "------------------------------------------"
+echo -e "$generated_repos"
+
+if [[ "$NOTES" != "" ]]; then
+	echo -e "------------------------------------------"
+	echo -e "\e[36mNotes:\e[0m"
+	echo -e "------------------------------------------"
+	echo -e "$NOTES"
+fi
+if [[ "$WARNINGS" != "" ]]; then
+	echo -e "------------------------------------------"
+	echo -e "\e[33mWarnings:\e[0m"
+	echo -e "------------------------------------------"
+	echo -e "$WARNINGS"
+fi
+#TODO: Errors are not yet listed
+if [[ "$ERRORS" != "" ]]; then
+	echo -e "------------------------------------------"
+	echo -e "\e[31mErrors:\e[0m"
+	echo -e "------------------------------------------"
+	echo -e "$ERRORS"
+fi
+
+echo -e "\nDone!..."
