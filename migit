@@ -384,6 +384,7 @@ for SUBDIR in $REPOLIST; do
 		commit.message = commit.message.decode("utf-8").replace("   ", " ").encode("utf-8")
 		commit.message = commit.message.decode("utf-8").replace("  ", " ").encode("utf-8")
 		commit.message = commit.message.decode("utf-8").lstrip("-").encode("utf-8");
+		commit.message = commit.message.decode("utf-8").lstrip("*").encode("utf-8");
 		commit.message = commit.message.decode("utf-8").lstrip(" ").encode("utf-8");
 		commit.message = commit.message.decode("utf-8").encode("utf-8")
 
