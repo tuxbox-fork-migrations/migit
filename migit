@@ -348,17 +348,6 @@ for SUBDIR in $REPOLIST; do
 		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS --commit-callback '
 		import datetime
 
-		# Some texts seem to be somehow broken, so here, for safety, replace umlauts with ASCII, 
-		# noticed with the old forked plugins.
-		# However, they were also pretty messy or even empty.
-		commit.message = commit.message.replace(b"\xfc", b"ue")
-		commit.message = commit.message.replace(b"\xe4", b"ae")
-		commit.message = commit.message.replace(b"\xf6", b"oe")
-		commit.message = commit.message.replace(b"\xdc", b"Ue")
-		commit.message = commit.message.replace(b"\xc4", b"Ae")
-		commit.message = commit.message.replace(b"\xdf", b"sz")
-		commit.message = commit.message.replace(b"\xd6", b"Oe")
-
 		# Preserve original message
 		origin_message = commit.message
 
@@ -381,21 +370,20 @@ for SUBDIR in $REPOLIST; do
 		b"Origin message was:\n------------------\n" + origin_message
 
 		# Clean up, remove unnecessary characters
-		commit.message = commit.message.decode("utf-8").replace("   ", " ").encode("utf-8")
-		commit.message = commit.message.decode("utf-8").replace("  ", " ").encode("utf-8")
-		commit.message = commit.message.decode("utf-8").lstrip("-").encode("utf-8");
-		commit.message = commit.message.decode("utf-8").lstrip("*").encode("utf-8");
-		commit.message = commit.message.decode("utf-8").lstrip(" ").encode("utf-8");
-		commit.message = commit.message.decode("utf-8").encode("utf-8")
+		commit.message = commit.message.replace(b"   ", b" ")
+		commit.message = commit.message.replace(b"  ", b" ")
+		commit.message = commit.message.lstrip(b"-");
+		commit.message = commit.message.lstrip(b"*");
+		commit.message = commit.message.lstrip(b" ");
 
 		# Adjust the introduction
 		if "'$SUBDIR'" != ".":
-		    commit.message = commit.message.decode("utf-8").replace("'$SUBDIR':", "").encode("utf-8")
+		    commit.message = commit.message.replace(b"'$SUBDIR':", b"")
 		    commit.message = b"'$(basename $SUBDIR)': " + commit.message
 
 		# Final cleanup and finish, references will be cleaned up from the history as well
-		commit.message = commit.message.decode("utf-8").replace("  ", " ").encode("utf-8")
-		' --refs HEAD > /dev/null 2>&1 &
+		commit.message = commit.message.replace(b"  ", b" ")
+		' --refs HEAD > /dev/null 2>&1  &
 		spinner_pid=$!
 		show_spinner $spinner_pid "rewriting"
 	fi
