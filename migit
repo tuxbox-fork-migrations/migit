@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.1"
+VERSION="0.2"
 VERSION_STRING="$VERSION Copyright (C) 2023 Thilo Graf, License: GPL2"
 
 #set -e
