@@ -350,6 +350,7 @@ for SUBDIR in $REPOLIST; do
 
 		# Preserve original message
 		origin_message = commit.message
+		origin_message_length = len(origin_message)
 
 		# Add an empty line
 		commit.message = commit.message + b"\n\n" \
@@ -366,8 +367,7 @@ for SUBDIR in $REPOLIST; do
 		# Add author, date, and origin message
 		commit.message += b"Author: " + commit.author_name + b" <" + commit.author_email + b">\n" + \
 		b"Date:   " + (datetime.datetime.fromtimestamp(int(commit.author_date.split()[0])).strftime("%Y-%m-%d (%a, %d %b %Y)") + "\n").encode() + \
-		b"\n" + \
-		b"Origin message was:\n------------------\n" + origin_message
+		b"\n"
 
 		# Clean up, remove unnecessary characters
 		commit.message = commit.message.replace(b"   ", b" ")
@@ -376,6 +376,10 @@ for SUBDIR in $REPOLIST; do
 		commit.message = commit.message.lstrip(b"*");
 		commit.message = commit.message.lstrip(b" ");
 
+		# Check the first chars. if rigin_message is not in commit.message, if not, then append origin message
+		if origin_message != commit.message[:origin_message_length]:
+		    commit.message += b"Origin message was:\n------------------\n" + origin_message
+
 		# Adjust the introduction
 		if "'$SUBDIR'" != ".":
 		    commit.message = commit.message.replace(b"'$SUBDIR':", b"")
@@ -383,7 +387,7 @@ for SUBDIR in $REPOLIST; do
 
 		# Final cleanup and finish, references will be cleaned up from the history as well
 		commit.message = commit.message.replace(b"  ", b" ")
-		' --refs HEAD > /dev/null 2>&1  &
+		' --refs HEAD > /dev/null 2>&1 &
 		spinner_pid=$!
 		show_spinner $spinner_pid "rewriting"
 	fi
