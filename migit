@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.2"
+VERSION="0.3"
 VERSION_STRING="$VERSION Copyright (C) 2023 Thilo Graf, License: GPL2"
 
 #set -e
@@ -49,22 +49,31 @@ show_help() {
 	echo "  $0 -u <clone url> [options]             Clone URL of the Git repository to be rewritten (required!)"
 	echo
 	echo " Options:"
-	echo "  -P, --pattern-source-url=<pattern>      Pattern prefix for the source commit URL. This sets the entry for the link to the source commit, which is prepended to the commit ID."
-	echo "  -T, --target-root-project-name=<name>   Name of the target folder within the deploy directory. Default: Current date and time of the rewrite."
-	echo "  -p, --project-name-prefix=<prefix>      Prefix of the target folder to be prepended to the extracted repository name."
-	echo "  -s, --project-name-suffix=<suffix>      Suffix of the target folder to be appended to the extracted repository name."
-	echo "  -S, --subdir                            Subdirectory to be rewritten."
+	echo "  Handling of subdirectories:"
+	echo "  -S, --subdir                            Subdirectory which to be rewritten."
 	echo "                                          If a complete root directory, meaning the repository at once, should be rewritten, specify only a dot without any further directories '--subdir .'"
-	echo "  -n, --no-rewrite-messages               Do not rewrite commit messages. Paths will still be rewritten, and if a .mailmap file is available, authors will also be rewritten."
-	echo "      --subdir-list=<list>                Directory list to be rewritten. The list must be enclosed in ''. Use spaces as separators (Default: All subdirectories of the first level within the root directory)"
-	echo "      --exclude-subdir-list=<list>        Subdirectories that should not be extracted. The list must be enclosed in ''. Use spaces as separators."
-	echo "                                          Useful if the --subdir-list= option was not specified or left empty."
-	echo "      --commit-introduction=<pattern>     Pattern for commit introductions in the first line of all commits. Default: the respective subdirectory name or the original repo name."
-	echo "                                          This only makes sense if a single repo is to be rewritten or if a consistent introduction of the commit message is desired."
-	echo "  -d, --deploy-dir=<dir>                  Output directory in which the rewritten repositories will be placed. Default: $DEPLOY_DIR"
-	echo "  -m, --mailmap-file=<path>               Path to the mailmap file. If not specified, it will be searched for in the script folder by default. If no .mailmap file is found, author normalization will be skipped."
+	echo "      --subdir-list=<list>                List of subdirectories to be rewritten. The list must be enclosed in ''. Use spaces as separators (Default: All subdirectories of the first level within the root directory)"
+	echo "      --exclude-subdir-list=<list>        Subdirectories to be ignored. The list must be enclosed in ''. Use spaces as separators."
+	echo "                                          NOTE! Only use this option if the --subdir-list= and --subdir option are not specified!"
+	echo
+	echo "  Handling of deployed repositories:"
+	echo "  -d, --deploy-dir=<dir>                  Output directory in which the rewritten repositories will be placed. Default:    $DEPLOY_DIR"
+	echo "  -p, --project-name-prefix=<prefix>      Prefix of the target folder to be prepended to the extracted repository name.    $DEPLOY_DIR/TARGET-ROOT-PROJECT/<prefix>REPO"
+	echo "  -s, --project-name-suffix=<suffix>      Suffix of the target folder to be appended to the extracted repository name.     $DEPLOY_DIR/TARGET-ROOT-PROJECT/REPO<suffix>"
+	echo "                                          You can also combine both options:                                               $DEPLOY_DIR/TARGET-ROOT-PROJECT/<prefix>REPO<suffix>"
 	echo "      --no-backups                        Older extracted repositories will be overwritten. Only the latest extracted repositories are always stored in the deployment folder."
 	echo
+	echo "  Handling of commit messages:"
+	echo "  -n, --no-rewrite-messages               Commit messages will be not touched, but paths will still be rewritten, and if a .mailmap file is available, authors will also be rewritten."
+	echo "  -P, --pattern-source-url=<pattern>      Pattern prefix for the source commit URL. This sets the entry for the link to the source commit, which is prepended to the commit ID."
+	echo "  -T, --target-root-project-name=<name>   Name of the target folder within the deploy directory. Default: Current date and time of the rewrite."
+	echo "      --commit-introduction=<pattern>     Pattern for commit introductions in the first line of all commits. Default: the respective subdirectory name or the original repo name."
+	echo "                                          This only makes sense if a single repo is to be rewritten or if a consistent introduction of the commit message is desired."
+	echo
+	echo "  Normalize e-mails of authors:"
+	echo "  -m, --mailmap-file=<path>               Path to the mailmap file. If not specified, it will be searched for inside the script root folder by default. If no .mailmap file was found, normalization will be skipped."
+	echo
+	echo "  Global:"
 	echo "      --version                           Show $(basename "$0") version"
 	echo "  -h, --help                              Show this help"
 }
