@@ -166,7 +166,7 @@ while [[ $# -gt 0 ]]; do
 		EXCLUDE_REPOLIST="${key#*=}"
 		shift
 		;;
-		--commit-introductiont=*)
+		--commit-introduction=*)
 		GIT_COMMIT_INTRO="${key#*=}"
 		shift
 		shift
