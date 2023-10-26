@@ -89,6 +89,11 @@ Dies macht Sinn, wenn generell eine einheitliche Einleitung der Commit-Nachricht
  -d, --deploy-dir=<dir>
 ```
 
+* Unterdrückt die Fortschrittsanzeige
+```
+ -q
+```
+
 
 ## Beispiele
 
