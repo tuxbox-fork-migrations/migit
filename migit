@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.3"
+VERSION="0.4"
 VERSION_STRING="$VERSION Copyright (C) 2023 Thilo Graf, License: GPL2"
 
 #set -e
@@ -25,6 +25,7 @@ GIT_WORKING_COPY_DIR=$WORKDIR/origin
 DEPLOY_DIR="$CUR_DIR/deploy"
 MAILMAP_FILE="$CUR_DIR/.mailmap"
 MESSAGES_REWRITE="$TRUE"
+NO_PROGRESS="$FALSE"
 
 REPOLIST=""
 EXCLUDE_REPOLIST=""
@@ -76,6 +77,7 @@ show_help() {
 	echo "  Global:"
 	echo "      --version                           Show $(basename "$0") version"
 	echo "  -h, --help                              Show this help"
+	echo "  -q                                      Don't show progress"
 }
 
 # Check if git-filter-repo is available.
@@ -189,6 +191,10 @@ while [[ $# -gt 0 ]]; do
 		MAILMAP_FILE="${key#*=}"
 		shift
 		;;
+		-q)
+		NO_PROGRESS="$TRUE"
+		shift
+		;;
 		-h|--help)
 		show_help
 		exit 0
@@ -222,26 +228,28 @@ fi
 
 # Function to display a spinner while a process is running
 function show_spinner() {
-local pid=$1
-local message=$2
-local spinner="/-\|"
+	local pid="$1"
+	local message="$2"
+	local spinner="/-\|"
 
-while kill -0 $pid 2>/dev/null; do
-	for i in $(seq 0 3); do
-		echo -ne "\r[${spinner:$i:1}] $message"
-		sleep 0.1
+	while kill -0 $pid 2>/dev/null; do
+		for i in $(seq 0 3); do
+			if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+				echo -ne "\r[${spinner:$i:1}] $message"
+				sleep 0.1
+			fi
+		done
 	done
-done
 
-wait $pid
+	wait $pid
 
-if [ $? -eq 0 ]; then
-	echo -ne "\r[\e[32m✓\e[0m] $message\n"
-else
-	echo -ne "\r[\e[33m✗\e[0m] $message Error!\n"
-	local error_code=$?
-	echo -ne "\r[\e[33m✗\e[0m] $message Error: $error_code"
-fi
+	if [ $? -eq 0 ]; then
+		echo -ne "\r[✓] $message\n"
+	else
+		echo -ne "\r[✗] $message Error!\n"
+		local error_code=$?
+		echo -ne "\r[✗] $message Error: $error_code"
+	fi
 }
 
 # clone...
