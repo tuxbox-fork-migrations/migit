@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.4"
+VERSION="0.5"
 VERSION_STRING="$VERSION Copyright (C) 2023 Thilo Graf, License: GPL2"
 
 #set -e
@@ -226,6 +226,15 @@ if [ -d $GIT_TEMP_REPO/.git ]; then
 	rm -rf $GIT_TEMP_REPO 
 fi
 
+# Function to replace the echo command, for usage with the -q optiom
+function my_echo() {
+	if [ "$NO_PROGRESS" == "$FALSE" ]; then
+		echo "$@"
+	else
+		echo "$@" | sed -r "s/\x1B\[[0-9;]*[a-zA-Z]//g"
+	fi
+}
+
 # Function to display a spinner while a process is running
 function show_spinner() {
 	local pid="$1"
@@ -235,7 +244,7 @@ function show_spinner() {
 	while kill -0 $pid 2>/dev/null; do
 		for i in $(seq 0 3); do
 			if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-				echo -ne "\r[${spinner:$i:1}] $message"
+				my_echo -ne "\r[${spinner:$i:1}] $message"
 				sleep 0.1
 			fi
 		done
@@ -244,16 +253,20 @@ function show_spinner() {
 	wait $pid
 
 	if [ $? -eq 0 ]; then
-		echo -ne "\r[✓] $message\n"
+		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+			my_echo -ne "\r[✓] $message\n"
+		fi
 	else
-		echo -ne "\r[✗] $message Error!\n"
+		my_echo -ne "\r[✗] $message Error!\n"
 		local error_code=$?
-		echo -ne "\r[✗] $message Error: $error_code"
+		my_echo -ne "\r[✗] $message Error: $error_code"
 	fi
 }
 
 # clone...
-echo -n "[ ] clone: $GIT_SOURCE_URL"
+if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+	my_echo -n "[ ] clone: $GIT_SOURCE_URL"
+fi
 git clone $GIT_SOURCE_URL $GIT_TEMP_REPO > /dev/null 2>&1 &
 spinner_pid=$!
 
@@ -280,7 +293,7 @@ fi
 ## Handle Exclude List
 # Remove entries from EXCLUDE_REPOLIST from REPOLIST
 for entry in $EXCLUDE_REPOLIST; do
-	REPOLIST=$(echo "$REPOLIST" | sed "s|$entry|""|g")
+	REPOLIST=$(my_echo "$REPOLIST" | sed "s|$entry|""|g")
 done
 ## end Exclude List
 
@@ -317,7 +330,7 @@ for SUBDIR in $REPOLIST; do
 	if [[ "$SUBDIR" == "." ]]; then
 		# Create the original repo name from the original clone URL
 		# Remove .git extension from URL
-		GIT_SOURCE=$(echo "$GIT_SOURCE_URL" | sed 's/\.git$//')
+		GIT_SOURCE=$(my_echo "$GIT_SOURCE_URL" | sed 's/\.git$//')
 		REPO_NAME="${TARGET_REPO_PREFIX}$(basename $GIT_SOURCE)${TARGET_REPO_SUFFIX}"
 	else
 		# Assemble the target folder name. This is the repo that will be generated from the subdirectory.
@@ -325,11 +338,11 @@ for SUBDIR in $REPOLIST; do
 	fi
 
 
-	echo -ne "\nprocessing $REPO_NAME...\n"
+	my_echo -ne "\nprocessing $REPO_NAME..."
 
 	if [ ! -d $SUBDIR ]; then
 		ERR_NOSUBDIR="$SUBDIR not found!"
-		echo -ne "\r[\e[33m✗\e[0m] Error: $ERR_NOSUBDIR\n"
+		my_echo -ne "\r[\e[33m✗\e[0m] Error: $ERR_NOSUBDIR\n"
 		ERRORS+=" - $ERR_NOSUBDIR"
 		continue
 	fi
@@ -346,13 +359,13 @@ for SUBDIR in $REPOLIST; do
 	else
 		if [[ "$MAILMAP_FILE" != "" ]]; then
 			WARN_NOMAILMAP="Mailmap file not found!"
-			echo -ne "\r[\e[33m✗\e[0m] Warning: $WARN_NOMAILMAP\n"
+			my_echo -ne "\r[\e[33m✗\e[0m] Warning: $WARN_NOMAILMAP\n"
 			WARNINGS+=" - $WARN_NOMAILMAP"
 		fi
 	fi
 
 	GIT_FILTER_REPO_OPTS="--force  $MAILMAP_OPTION $PATH_OPTION" 
-	#  echo "$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS"
+	#  my_echo "$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS"
 	#  exit 0
 
 	# Adjust commit messages, include origin data, and normalize author names with emails
@@ -410,14 +423,16 @@ for SUBDIR in $REPOLIST; do
 	fi
 	
 	# Cleanup
-	echo -n "[ ] cleanup"
+	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+		my_echo -n "[ ] cleanup"
+	fi
 	rm -rf $GIT_WORKING_COPY_DIR/$ORIGIN_REPO_NAME
 	if [ $? -eq 0 ]; then
-		echo -ne "\r[\e[32m✓\e[0m] cleanup\n"
+		my_echo -ne "\r[\e[32m✓\e[0m] cleanup\n"
 	else
-		echo -ne "\r[\e[33m✗\e[0m] Error!\n"
+		my_echo -ne "\r[\e[33m✗\e[0m] Error!\n"
 		error_code=$?
-		echo -ne "\r[\e[33m✗\e[0m] Error: $error_code"
+		my_echo -ne "\r[\e[33m✗\e[0m] Error: $error_code"
 		$ERRORS+="$error_code - $error_description"
 		break
 	fi
@@ -425,18 +440,20 @@ for SUBDIR in $REPOLIST; do
 	cd $WORKDIR
 
 	## Prepare and move everything into the deploy directory...
-	echo -n "[ ] deploy"
+	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+		my_echo -n "[ ] deploy"
+	fi
 
 	# ...move results from working directory into project directory	
 	mv $GIT_WORKING_COPY_DIR $DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP/$REPO_NAME
 
 	if [ $? -eq 0 ]; then
-		echo -ne "\r[\e[32m✓\e[0m] deploy\n"
+		my_echo -ne "\r[\e[32m✓\e[0m] deploy\n"
 		generated_repos+=" - $REPO_NAME\n"
 	else
-		echo -ne "\r[\e[33m✗\e[0m] Error!\n"
+		my_echo -ne "\r[\e[33m✗\e[0m] Error!\n"
 		error_code=$?
-		echo -ne "\r[\e[33m✗\e[0m] Error: $error_code"
+		my_echo -ne "\r[\e[33m✗\e[0m] Error: $error_code"
 		$ERRORS+="$error_code - $error_description"
 		break
 	fi
@@ -446,30 +463,33 @@ done
 ln -sf $DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP $DEPLOY_DIR/$GIT_PROJECT_NAME
 
 ## show results
-echo -e "\n------------------------------------------"
+my_echo -e "------------------------------------------"
 entry_count=$(grep -o ' - ' <<< "$generated_repos" | wc -l)
-echo "Processed: $entry_count directories"
-echo -e "------------------------------------------"
-echo -e "$generated_repos"
+my_echo "Processed: $entry_count directories"
+my_echo -e "------------------------------------------"
+my_echo -e "$generated_repos"
 
-if [[ "$NOTES" != "" ]]; then
-	echo -e "------------------------------------------"
-	echo -e "\e[36mNotes:\e[0m"
-	echo -e "------------------------------------------"
-	echo -e "$NOTES"
-fi
-if [[ "$WARNINGS" != "" ]]; then
-	echo -e "------------------------------------------"
-	echo -e "\e[33mWarnings:\e[0m"
-	echo -e "------------------------------------------"
-	echo -e "$WARNINGS"
-fi
-#TODO: Errors are not yet listed
-if [[ "$ERRORS" != "" ]]; then
-	echo -e "------------------------------------------"
-	echo -e "\e[31mErrors:\e[0m"
-	echo -e "------------------------------------------"
-	echo -e "$ERRORS"
+if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+	if [[ "$NOTES" != "" ]]; then
+		my_echo -e "------------------------------------------"
+		my_echo -e "\e[36mNotes:\e[0m"
+		my_echo -e "------------------------------------------"
+		my_echo -e "$NOTES"
+	fi
+	if [[ "$WARNINGS" != "" ]]; then
+		my_echo -e "------------------------------------------"
+		my_echo -e "\e[33mWarnings:\e[0m"
+		my_echo -e "------------------------------------------"
+		my_echo -e "$WARNINGS"
+	fi
+	#TODO: Errors are not yet listed
+	if [[ "$ERRORS" != "" ]]; then
+		my_echo -e "------------------------------------------"
+		my_echo -e "\e[31mErrors:\e[0m"
+		my_echo -e "------------------------------------------"
+		my_echo -e "$ERRORS"
+	fi
 fi
 
-echo -e "\nDone!..."
+my_echo -e "Done!..."
+my_echo -e "------------------------------------------"
