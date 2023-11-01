@@ -263,6 +263,9 @@ function show_spinner() {
 	fi
 }
 
+# get start time
+start=$(date +%s)
+
 # clone...
 if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 	my_echo -n "[ ] clone: $GIT_SOURCE_URL"
@@ -491,5 +494,10 @@ if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 	fi
 fi
 
-my_echo -e "Done!..."
+# get end time
+end=$(date +%s)
+duration=$((end - start))
+minutes=$((duration / 60))
+seconds=$((duration % 60))
+my_echo -e "\e[1m\e[32mdone:\e[0m (elapsed time: $minutes min $seconds sec)"
 my_echo -e "------------------------------------------"
