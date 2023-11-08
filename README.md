@@ -117,7 +117,7 @@ subdir1: this is a commit message
     - this is a commit message
 ```
 
-### Bestimmtes Unterverzeichnisse eines Repositories extrahieren mit Angabe des Quellcommits
+### Bestimmtes Unterverzeichnis eines Repositories extrahieren mit Angabe des Quellcommits
 ```
 ./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1
 ```
