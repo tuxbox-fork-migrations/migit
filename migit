@@ -263,6 +263,7 @@ function show_spinner() {
 	fi
 }
 
+
 # get start time
 start=$(date +%s)
 
@@ -272,9 +273,18 @@ if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 fi
 git clone $GIT_SOURCE_URL $GIT_TEMP_REPO > /dev/null 2>&1 &
 spinner_pid=$!
-
 show_spinner $spinner_pid "clone"
 
+# pull branches...
+local_branches=$(git -C $GIT_TEMP_REPO branch | sed 's/\*//g' | awk '{$1=$1};1')
+git -C $GIT_TEMP_REPO branch -r | grep -v '\->' | while read remote; do
+    branch_name="${remote#origin/}"
+    if ! echo "$local_branches" | grep -q "$branch_name"; then
+        git -C $GIT_TEMP_REPO branch --track "$branch_name" "$remote"  > /dev/null 2>&1 &
+        spinner_pid=$!
+	show_spinner $spinner_pid "pull additional branch: $branch_name"
+    fi
+done
 
 # Cleanup if necessary
 if [ -d $GIT_WORKING_COPY_DIR ]; then
@@ -328,7 +338,7 @@ for SUBDIR in $REPOLIST; do
 
 	# Ensure we are in the working copy
 	cd $GIT_WORKING_COPY_DIR
-
+	
 	# ...set repo name if only origin is output
 	if [[ "$SUBDIR" == "." ]]; then
 		# Create the original repo name from the original clone URL
@@ -371,9 +381,10 @@ for SUBDIR in $REPOLIST; do
 	#  my_echo "$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS"
 	#  exit 0
 
+
 	# Adjust commit messages, include origin data, and normalize author names with emails
 	if [[ "$MESSAGES_REWRITE" != "$TRUE" ]]; then
-		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS --refs HEAD> /dev/null 2>&1 &
+		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS > /dev/null 2>&1 &
 		spinner_pid=$!
 		show_spinner $spinner_pid "rewriting"
 		NOTES+="Commit messages not rewritten"
@@ -420,7 +431,7 @@ for SUBDIR in $REPOLIST; do
 
 		# Final cleanup and finish, references will be cleaned up from the history as well
 		commit.message = commit.message.replace(b"  ", b" ")
-		' --refs HEAD > /dev/null 2>&1 &
+		'  > /dev/null 2>&1 &
 		spinner_pid=$!
 		show_spinner $spinner_pid "rewriting"
 	fi
