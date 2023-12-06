@@ -372,7 +372,7 @@ for SUBDIR in $REPOLIST; do
 	else
 		if [[ "$MAILMAP_FILE" != "" ]]; then
 			WARN_NOMAILMAP="Mailmap file not found!"
-			my_echo -ne "\r[\e[33m✗\e[0m] Warning: $WARN_NOMAILMAP\n"
+			my_echo -ne "\r[\e[33m!\e[0m] Warning: $WARN_NOMAILMAP\n"
 			WARNINGS+=" - $WARN_NOMAILMAP"
 		fi
 	fi
