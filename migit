@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VERSION="0.6"
-VERSION_STRING="$VERSION Copyright (C) 2023 Thilo Graf, License: GPL2"
+VERSION_STRING="$VERSION Copyright (C) 2023-2024 Thilo Graf, License: GPL2"
 
 #set -e
 #set -x
@@ -431,7 +431,10 @@ for SUBDIR in $REPOLIST; do
 
 		# Append the specified message if only a single commit introduction exists and no further additions
 		if origin_message.count(b"\n") == 1:
-		    commit.message += b"\n------------------\nNo further justification available within origin commit message!"
+		    commit.message += b"\n------------------\nNo further description and justification available within origin commit message!"
+
+		# Append version information
+		commit.message += b"\n\n------------------\nMigit v'$VERSION'"
 
 		# Final cleanup and finish, references will be cleaned up from the history as well
 		commit.message = commit.message.replace(b"  ", b" ")
