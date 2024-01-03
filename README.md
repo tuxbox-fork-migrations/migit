@@ -34,6 +34,7 @@ Wenn die URL das erste Argument ist, dann kann die Angabe des Flags '-u' weggela
 ```
  ./migit <clone url> [options]
 ```
+Als Protokolle werden http, https, git und ssh unterstützt. Für lokale Pfade, verwende nur den relativen Pfad zum Repository! 
 
 ## Optionen
 * Muster-Präfix für Quellcommit URL. Dies legt die Eintragung für den Link zum Quellcommit fest, die der Commit-ID vorangestellt wird.
