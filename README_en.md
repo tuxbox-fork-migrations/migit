@@ -9,7 +9,7 @@ Since automation with the help of Migit is also possible to mirror migrated fork
 Migit relies on the "git-filter-repo" tool to recycle arbitrary subfolders from a monolithic repository back into the original repository model. Entire repositories can also be converted.
 Commit messages are rewritten as far as possible using common format conventions and, if they differ, the original content of the commits is added in addition. Optionally, a reference to the source commits from the fork repositories can be included in the rewritten commits. The migrated repositories are stored in a deploy folder according to the name and as a backup with a time stamp as separate repositories. During the deployment process, a symlink without a timestamp is always created to the last migrated project. The repositories created in this way can, for example, be processed automatically as mirrors or further processed as required.
 
-However, one problem remains that fork operators may have only used merges on the original submodules to make things supposedly easy for themselves. This may even be done automatically or scripted, or the repositories may have been arbitrarily initialized from an arbitrary version level at some point without fully inheriting the history. As a result, fast forward merges will no longer be possible sooner or later. Every non-fastforward merge also creates a merge commit, which in the long run would inevitably lead to complex disorder in the forks. In addition, there can be a sloppy commit culture and there is no real cure for this, meaning that these commits can only be optimized to a limited extent in terms of content. Unfortunately, this mess can only be partially remedied when backporting, if at all, but at least it can be arranged chronologically and some common format conventions can be applied.
+However, one problem remains that fork operators may have only used merges on the original submodules to make things supposedly easy for themselves. This may even be done automatically or scripted, or the repositories may have been arbitrarily initialized from an arbitrary version level at some point without fully inheriting the history. As a result, fast forward merges will no longer be possible sooner or later. Every non-fastforward merge also creates a merge commit, which in the long run would inevitably lead to complex disorder in the forks. In addition, there can be a sloppy commit culture and there is not really a cure for this, meaning that these commits can only be optimized to a limited extent in terms of content. Unfortunately, this mess can only be partially remedied when backporting, if at all, but at least it can be arranged chronologically and some common format conventions can be applied.
 
 
 # Contents
@@ -28,8 +28,13 @@ The script requires the git-filter-repo tool. Make sure it is installed. See: ht
 ## Use
 Specify the clone URL of the Git repository to be rewritten.
 ```
- -u <clone url> [options]
+ ./migit -u <clone url> [options]
 ```
+If the URL is the first argument, then specifying the '-u' flag can be omitted.
+```
+ ./migit <clone url> [options]
+```
+The protocols supported are http, https, git and ssh. For local paths, only use the relative path to the repository!
 
 ## Options
 * Pattern prefix for source commit URL. This specifies the entry for the link to the source commit, which is prefixed to the commit ID.
