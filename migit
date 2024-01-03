@@ -429,6 +429,10 @@ for SUBDIR in $REPOLIST; do
 		    commit.message = commit.message.replace(b"'$SUBDIR':", b"")
 		    commit.message = b"'$(basename $SUBDIR)': " + commit.message
 
+		# Append the specified message if only a single commit introduction exists and no further additions
+		if origin_message.count(b"\n") == 1:
+		    commit.message += b"\n------------------\nNo further justification available within origin commit message!"
+
 		# Final cleanup and finish, references will be cleaned up from the history as well
 		commit.message = commit.message.replace(b"  ", b" ")
 		'  > /dev/null 2>&1 &
