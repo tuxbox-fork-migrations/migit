@@ -103,19 +103,19 @@ first_arg=true
 
 for arg in "$@"
 do
-    if [[ $arg == "-u" ]]; then
-        next_is_url=true
-    elif [[ $next_is_url == true ]]; then
-        GIT_SOURCE_URL=$arg
-        next_is_url=false
-        break # Beendet die Schleife, da die URL gefunden wurde
-    elif [[ $first_arg == true && $arg =~ ^http ]]; then
-        GIT_SOURCE_URL=$arg
-        first_arg=false
-        shift # remove first argument, because it's alread an url
-    else
-        first_arg=false
-    fi
+	if [[ $arg == "-u" ]]; then
+		next_is_url=true
+	elif [[ $next_is_url == true ]]; then
+		GIT_SOURCE_URL=$arg
+		next_is_url=false
+		break # Beendet die Schleife, da die URL gefunden wurde
+	elif [[ $first_arg == true && ( $arg =~ ^(http|https|git|ssh):// || $arg =~ ^/ || $arg =~ ^(\./|\../) ) ]]; then
+		GIT_SOURCE_URL=$arg
+		first_arg=false
+		shift # remove first argument, because it's already an url or a local path
+	else
+		first_arg=false
+	fi
 done
 
 # Original argument processing logic
