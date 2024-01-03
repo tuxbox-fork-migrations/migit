@@ -28,7 +28,11 @@ Das Skript erfordert das Tool git-filter-repo. Stelle sicher, dass es installier
 ## Verwendung
 Clone URL des Git-Repositories angeben, welches umgeschrieben werden soll.
 ```
- -u <clone url> [options]
+ ./migit -u <clone url> [options]
+```
+Wenn die URL das erste Argument ist, dann kann die Angabe des Flags '-u' weggelassen werden.
+```
+ ./migit <clone url> [options]
 ```
 
 ## Optionen

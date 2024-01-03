@@ -95,6 +95,30 @@ else
 fi
 
 # Process the options
+
+# Handle logic to get GIT_SOURCE_URL, so we can use the first argument always as url, if no -u option was defined
+GIT_SOURCE_URL=""
+next_is_url=false
+first_arg=true
+
+for arg in "$@"
+do
+    if [[ $arg == "-u" ]]; then
+        next_is_url=true
+    elif [[ $next_is_url == true ]]; then
+        GIT_SOURCE_URL=$arg
+        next_is_url=false
+        break # Beendet die Schleife, da die URL gefunden wurde
+    elif [[ $first_arg == true && $arg =~ ^http ]]; then
+        GIT_SOURCE_URL=$arg
+        first_arg=false
+        shift # remove first argument, because it's alread an url
+    else
+        first_arg=false
+    fi
+done
+
+# Original argument processing logic
 while [[ $# -gt 0 ]]; do
 	key="$1"
 
