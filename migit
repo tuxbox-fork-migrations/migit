@@ -40,15 +40,18 @@ NOTES=""
 # Function to display script help
 show_help() {
 	echo
-	echo " -------------------------------------------------------------------"
+	echo " ------------------------------------------------------------------"
 	echo " $(basename "$0")"
 	echo " Version: $VERSION_STRING"
-	echo " Script tool for rewriting Git repositories or extracting"
-	echo " repository subdirectories based on $GIT_FILTER_REPO_NAME."
-	echo " -------------------------------------------------------------------"
+	echo
+	echo " Script tool for extracting subdirectories into individual"
+	echo " repositories and rewriting Git repositories for a clean history,"
+	echo " based on the functionality of $GIT_FILTER_REPO_NAME."
+	echo " ------------------------------------------------------------------"
 	echo
 	echo " Usage:"
-	echo "  $0 -u <clone url> [OPTIONS]             Clone URL of the Git repository to be rewritten (required!)"
+	echo "  $0 <clone url> [OPTIONS]	        Clone URL of the Git repository that needs to be rewritten or from which subdirectories should be extracted into separate repositories."
+	echo "  $0 -u <clone url> [OPTIONS]"
 	echo
 	echo " Options:"
 	echo "  Handling of subdirectories:"
@@ -67,7 +70,8 @@ show_help() {
 	echo
 	echo "  Handling of commit messages:"
 	echo "  -n, --no-rewrite-messages               Commit messages will be not touched, but paths will still be rewritten, and if a .mailmap file is available, authors will also be rewritten."
-	echo "  -P, --pattern-source-url=<PATTERN>      Pattern prefix for the source commit URL. This sets the entry for the link to the source commit, which is prepended to the commit ID."
+	echo "  -P, --prefix-source-url=<PREFIX>        Prefix for the source commit URL. This sets the prefix for the link to the source commit, which is prepended to the commit ID."
+	echo "	    --pattern-source-url=<PATTERN>	Obsolete: The same like --prefix-source-url"
 	echo "  -T, --target-root-project-name=<NAME>   Name of the target folder within the deploy directory. Default: Current date and time of the rewrite."
 	echo "      --commit-introduction=<PATTERN>     Pattern for commit introductions in the first line of all commits. Default: the respective subdirectory name or the original repo name."
 	echo "                                          This only makes sense if a single repo is to be rewritten or if a consistent introduction of the commit message is desired."
@@ -115,6 +119,10 @@ do
 		GIT_SOURCE_URL=$arg
 		first_arg=false
 		shift # remove first argument, because it's already an url or a local path
+	elif [[ $first_arg == true && ( $arg =~ ^(git|ssh)@ || $arg =~ ^/ || $arg =~ ^(\./|\../) ) ]]; then
+		GIT_SOURCE_URL=$arg
+		first_arg=false
+		shift # remove first argument, because it's already an url or a local path
 	else
 		first_arg=false
 	fi
@@ -150,7 +158,7 @@ while [[ $# -gt 0 ]]; do
 		shift
 		shift
 		;;
-		--pattern-source-url=*)
+		--pattern-source-url=*|--prefix-source-url=*)
 		GIT_SRC_COMMIT_URL_PREFIX="${key#*=}"
 		shift
 		;;
@@ -285,7 +293,7 @@ function show_spinner() {
 
 	if [ $? -eq 0 ]; then
 		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-			my_echo -ne "\r[✓] $message\n"
+			my_echo -ne "\r[\e[32m✓\e[0m] $message\n"
 		fi
 	else
 		my_echo -ne "\r[✗] $message Error!\n"
@@ -356,6 +364,27 @@ if [[ "$NO_BACKUPS" == "$TRUE" ]]; then
 	rm -rf $DEPLOY_DIR/$GIT_PROJECT_NAME-*
 fi
 
+## preset url prefix for source commit
+if [[ "$GIT_SRC_COMMIT_URL_PREFIX" == "" ]]; then
+	GIT_PROJECT_NAME=$(basename $GIT_SOURCE_URL | sed 's/\.git//')
+	url="$GIT_SOURCE_URL"
+	# Entfernen von .git und Anhängen von /commit
+	GIT_SRC_COMMIT_URL_PREFIX="${url%\.git}/commit"
+fi
+## check source commit url prefix
+wget --spider -q "$GIT_SRC_COMMIT_URL_PREFIX"
+weget_exit_stat=$?
+spinner_pid=$!
+show_spinner $spinner_pid "Check url source commit prefix URL: \e[1m$GIT_SRC_COMMIT_URL_PREFIX\e[0m ..."
+if [ $weget_exit_stat -ne 0 ]; then
+	NOTE_ORIG_COMMIT="Check url source commit prefix failed! URL: \e[33m$GIT_SRC_COMMIT_URL_PREFIX\e[0m"
+	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+		my_echo -ne "\e[1A[\e[33m!\e[0m] NOTE: $NOTE_ORIG_COMMIT\n"
+	fi
+	NOTES+=" - $NOTE_ORIG_COMMIT\n   Set Parameter -P to set a valid source commit prefix for source commits."
+	GIT_SRC_COMMIT_URL_PREFIX=""
+fi
+
 ## set time stamp
 TIME_STAMP="$(date +%Y-%m%d-%H%M%S)"
 
@@ -409,8 +438,8 @@ for SUBDIR in $REPOLIST; do
 	fi
 
 	GIT_FILTER_REPO_OPTS="--force  $MAILMAP_OPTION $PATH_OPTION" 
-	#  my_echo "$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS"
-	#  exit 0
+# 	 my_echo "$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS"
+# 	 exit 0
 
 
 	# Adjust commit messages, include origin data, and normalize author names with emails
