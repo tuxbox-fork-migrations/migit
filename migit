@@ -436,8 +436,8 @@ for SUBDIR in $REPOLIST; do
 		b"Branch: " + b"'$(git symbolic-ref HEAD)'" + b"\n"
 
 		# Add the link to the source commit
-		if "'$GIT_SRC_COMMIT_URL_PREFIX'" != "":
-		    commit.message += b"Commit: '$GIT_SRC_COMMIT_URL_PREFIX'/" + commit.original_id + b"\n"
+		if "'"$GIT_SRC_COMMIT_URL_PREFIX"'" != "":
+		    commit.message += b"Commit: '"$GIT_SRC_COMMIT_URL_PREFIX"'/" + commit.original_id + b"\n"
 
 		# Add author, date, and origin message
 		commit.message += b"Author: " + commit.author_name + b" <" + commit.author_email + b">\n" + \
@@ -456,8 +456,8 @@ for SUBDIR in $REPOLIST; do
 		    commit.message += b"Origin message was:\n------------------\n" + origin_message
 
 		# Adjust the introduction
-		if "'$SUBDIR'" != ".":
-		    commit.message = commit.message.replace(b"'$SUBDIR':", b"")
+		if "'"$SUBDIR"'" != ".":
+		    commit.message = commit.message.replace(b"'"$SUBDIR"':", b"")
 		    commit.message = b"'$(basename $SUBDIR)': " + commit.message
 
 		# Append the specified message if only a single commit introduction exists and no further additions
