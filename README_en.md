@@ -27,80 +27,80 @@ The script requires the git-filter-repo tool. Make sure it is installed. See: ht
 
 ## Use
 Specify the clone URL of the Git repository to be rewritten.
-```
+```bash
  ./migit -u <clone url> [OPTIONS]
 ```
 If the URL is the first argument, then specifying the '-u' flag can be omitted.
-```
+```bash
  ./migit <clone url> [OPTIONS]
 ```
 The protocols supported are http, https, git and ssh. For local paths, only use the relative path to the repository!
 
 ## Options
 * Pattern prefix for source commit URL. This specifies the entry for the link to the source commit, which is prefixed to the commit ID.
-```
+```bash
  -P, --pattern-source-url=<PATTERN>
 ```
 
 
 * Name of the target folder within the deploy folder. Default: Name of the cloned project and timestamp of the rewrite. By default, the project name is generated from the clone URL.
-```
+```bash
  -T, --target-root-project-name=<NAME>
 ```
 
 
 * Destination folder prefix that precedes the extracted repository name.
-```
+```bash
  -p, --project-name-prefix=<PREFIX>
 ```
 
 
 * Destination folder suffix appended to the extracted repository name.
-```
+```bash
  -s, --project-name-suffix=<SUFFIX>
 ```
 
 
 * Subdirectory to be rewritten.
-```
+```bash
  -S, --subdir
 ```
 If a repository is to be completely rewritten, then only specify one point without any additional directories:
-```
+```bash
 --subdir .
 ```
 
 * List of subdirectories to be rewritten. Directory listing must be surrounded by apostrophes 'sub1 sub2...'.
 Spaces are separators (default: all first-level subdirectories within the root directory)
-```
+```bash
  --subdir-list='<LIST>'
 ```
 
 
 * List of subdirectories not to be extracted. List must be surrounded by apostrophes 'subx suby...'. Space as a separator.
-```
+```bash
  --exclude-subdir-list='<LIST>'
 ```
 
 
 * Pattern for commit introductions in the first line of all commits. Default: the respective subdirectory name or the original repo name.
 This makes sense if you generally want a uniform introduction to the commit message.
-```
+```bash
  --commit-introduction=<PATTERN>
 ```
 
 * Adds a signature (in the sense of a suffix) to the end of each modified commit message.
-```
+```bash
  --commit-suffix=<SUFFIX>
 ```
 
 * Output directory (deploy folder) in which the rewritten repositories are stored. Default: ./deploy
-```
+```bash
  -d, --deploy-dir=<DIR>
 ```
 
 * Suppresses the progress bar
-```
+```bash
  -q
 ```
 
@@ -108,11 +108,11 @@ This makes sense if you generally want a uniform introduction to the commit mess
 ## Examples
 
 ### Extract all subdirectories of a repository
-```
+```bash
 ./migit -u https://github.com/example/repository.git
 ```
 Commits are rewritten like this:
-```
+```bash
 subdir1: this is a commit message
     
     
@@ -128,11 +128,11 @@ subdir1: this is a commit message
 ```
 
 ### Extract specific subdirectory of a repository specifying the source commit
-```
+```bash
 ./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1 --commit-suffix=' Automatically migrated by Migit'
 ```
 Commits are rewritten like this:
-```
+```bash
     subdir1: small fixes for something
     
     
@@ -153,21 +153,21 @@ Commits are rewritten like this:
 ```
 
 ### Extract multiple subdirectories of a repository specifying the source commit
-```
+```bash
 ./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir-list='subdir1 subdir2'
 ```
 Commits are rewritten as in the previous example, but this time for specific subdirectories.
 
 
 ### Extract subdirectories of a repository, but exclude certain subdirectories, specifying the source commit
-```
+```bash
 ./migit-u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --exclude-subdir-list='subdir1 subdir2 '
 ```
 Commits are rewritten as in the previous example but all subdirectories except subdir1 and subdir2 are extracted.
 
 
 ### Extract subdirectories from deeper levels of a repository, specifying the source commit
-```
+```bash
 ./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1/nextdir/tool
 ```
 Commits are rewritten as in the previous example but the subdirectory 'tool' is extracted.
