@@ -71,7 +71,7 @@ show_help() {
 	echo "  -T, --target-root-project-name=<NAME>   Name of the target folder within the deploy directory. Default: Current date and time of the rewrite."
 	echo "      --commit-introduction=<PATTERN>     Pattern for commit introductions in the first line of all commits. Default: the respective subdirectory name or the original repo name."
 	echo "                                          This only makes sense if a single repo is to be rewritten or if a consistent introduction of the commit message is desired."
-	echo "      --commit-suffix=<SUFFIX>            Adds a signature at the end of the modified commit message e.g a text 'Automatically migrated by Migit v.$VERSION"
+	echo "      --commit-suffix=<SUFFIX>            Adds a signature at the end of the modified commit message e.g a text 'Automatically migrated by Migit v.$VERSION'"
 	echo
 	echo "  Normalize e-mails of authors:"
 	echo "  -m, --mailmap-file=<PATH>               Path to the mailmap file. If not specified, it will be searched for inside the script root folder by default. If no .mailmap file was found, normalization will be skipped."
