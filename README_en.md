@@ -24,6 +24,7 @@ However, one problem remains that fork operators may have only used merges on th
 The script requires the git-filter-repo tool. Make sure it is installed. See: https://github.com/newren/git-filter-repo#how-do-i-install-it
   * git >= 2.24.0
   * python3 >= 3.5
+  * due to
 
 ## Use
 Specify the clone URL of the Git repository to be rewritten.
@@ -37,10 +38,14 @@ If the URL is the first argument, then specifying the '-u' flag can be omitted.
 The protocols supported are http, https, git and ssh. For local paths, only use the relative path to the repository!
 
 ## Options
-* Pattern for URL prefix for source commit URL. This specifies the entry for the link to the source commit, which is prefixed to the commit ID.
+* Pattern for URL prefix for the source commit URL. This sets the link to the source commit to which the commit ID will be appended.
 ```bash
- -P, --pattern-source-url=<PATTERN>
+ -P, --prefix-source-url=<PREFIX> # from version 0.8
 ```
+This parameter is optional and does not need to be specified explicitly. The prefix URL is automatically obtained from the clone URL, with only accessibility being checked.
+If this fails, this will be displayed. In such a case, no source commits are entered in the commits and it is recommended to set the parameter.
+
+Note: --pattern-source-url=<PREFIX> is deprecated, but can still be used due to backwards compatibility!
 
 
 * Name of the target folder within the deploy folder. Default: Name of the cloned project and timestamp of the rewrite. By default, the project name is generated from the clone URL.
