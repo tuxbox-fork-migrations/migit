@@ -332,13 +332,14 @@ spinner_pid=$!
 show_spinner $spinner_pid "clone"
 
 # pull branches...
-local_branches=$(git -C $GIT_TEMP_REPO branch | sed 's/\*//g' | awk '{$1=$1};1')
-git -C $GIT_TEMP_REPO branch -r | grep -v '\->' | while read remote; do
+local_branches=$(git -C "$GIT_TEMP_REPO" branch | sed 's/\*//g' | awk '{$1=$1};1')
+git -C "$GIT_TEMP_REPO" branch -r | grep -v '\->' | while read remote; do
 	branch_name="${remote#origin/}"
-	if ! echo "$local_branches" | grep -q "$branch_name"; then
-		git -C $GIT_TEMP_REPO branch --track "$branch_name" "$remote"
+	if ! echo "$local_branches" | grep -q "^$branch_name$"; then
+		my_echo -n "[ ] Create branch: $branch_name"
+		git -C $GIT_TEMP_REPO checkout -b "$branch_name" "$remote" > /dev/null 2>&1 &
 		spinner_pid=$!
-		show_spinner $spinner_pid "pull additional branch: $branch_name"
+		show_spinner $spinner_pid "Create branch: $branch_name"
 	fi
 done
 
