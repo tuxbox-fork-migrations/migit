@@ -24,6 +24,7 @@ Ein Problem besteht allerdings unverändert darin, dass Forkbetreiber möglicher
 Das Skript erfordert das Tool git-filter-repo. Stelle sicher, dass es installiert ist. Siehe: https://github.com/newren/git-filter-repo#how-do-i-install-it
   * git >= 2.24.0
   * python3 >= 3.5
+  * wget
 
 ## Verwendung
 Clone URL des Git-Repositories angeben, welches umgeschrieben werden soll.
@@ -37,10 +38,14 @@ Wenn die URL das erste Argument ist, dann kann die Angabe des Flags '-u' weggela
 Als Protokolle werden http, https, git und ssh unterstützt. Für lokale Pfade, verwende nur den relativen Pfad zum Repository! 
 
 ## Optionen
-* Muster für URL-Präfix für Quellcommit URL. Dies legt die Eintragung für den Link zum Quellcommit fest, die der Commit-ID vorangestellt wird.
+* Muster für URL-Präfix für die Quellcommit URL. Dies legt den Link zum Quellcommit fest, an den die Commit-ID angehängt wird.
 ```bash
- -P, --pattern-source-url=<PATTERN>
+ -P, --prefix-source-url=<PREFIX> # ab Version 0.8
 ```
+Dieser Parameter ist Optional und muss nicht explizit angegeben werden. Die Prefix-URL wird automatisch aus der Klon-URL gewonnen, wobei lediglich die Erreichbarkeit geprüft wird.
+Sollte dies fehlschlagen, wird dies angezeigt. In solch einem Fall, werden in die Commits auch keine Quellcommits eingetragen und es ist empfehlenswert den Parameter zu setzen.
+
+Hinweis:  --pattern-source-url=<PREFIX> ist veraltet, ist aber wegen der Abwärtskompatiblität weiterhin verwendbar!
 
 
 * Name des Zielordners innerhalb des Deploy-Ordners. Standard: Name des geklonten Projekts und Zeitstempel der Umschreibung. Der Projektname wird standardmäßig aus der Clone-URL generiert.
