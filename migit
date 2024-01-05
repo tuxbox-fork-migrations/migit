@@ -16,6 +16,7 @@ GIT_SRC_COMMIT_URL_PREFIX=""
 GIT_PROJECT_NAME=""
 GIT_COMMIT_INTRO=""
 GIT_COMMIT_SUFFIX=""
+GIT_SSH_KEYFILE=""
 NO_BACKUPS="$FALSE"
 
 CUR_DIR=$(pwd)
@@ -54,6 +55,8 @@ show_help() {
 	echo "  $0 -u <clone url> [OPTIONS]"
 	echo
 	echo " Options:"
+	echo "  Handling for ssh access:"
+	echo "      --id-rsa-file=<PATH>                Path to your privat key file e.g. ~/.ssh/id_rsa"
 	echo "  Handling of subdirectories:"
 	echo "  -S, --subdir                            Subdirectory which to be rewritten."
 	echo "                                          If a complete root directory, meaning the repository at once, should be rewritten, specify only a dot without any further directories '--subdir .'"
@@ -115,7 +118,7 @@ do
 		GIT_SOURCE_URL=$arg
 		next_is_url=false
 		break # Beendet die Schleife, da die URL gefunden wurde
-	elif [[ $first_arg == true && ( $arg =~ ^(http|https|git|ssh):// || $arg =~ ^/ || $arg =~ ^(\./|\../) ) ]]; then
+	elif [[ $first_arg == true && ( $arg =~ ^(http|https):// || $arg =~ ^/ || $arg =~ ^(\./|\../) ) ]]; then
 		GIT_SOURCE_URL=$arg
 		first_arg=false
 		shift # remove first argument, because it's already an url or a local path
@@ -217,6 +220,11 @@ while [[ $# -gt 0 ]]; do
 		shift
 		shift
 		;;
+		--id-rsa-file=*)
+		GIT_SSH_KEYFILE="${key#*=}"
+		shift
+		shift
+		;;
 		--deploy-dir=*)
 		DEPLOY_DIR="${key#*=}"
 		shift
@@ -310,20 +318,30 @@ start=$(date +%s)
 if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 	my_echo -n "[ ] clone: $GIT_SOURCE_URL"
 fi
-git clone $GIT_SOURCE_URL $GIT_TEMP_REPO > /dev/null 2>&1 &
+if [[ "$GIT_SSH_KEYFILE" == "" ]]; then
+	git clone "$GIT_SOURCE_URL" "$GIT_TEMP_REPO" > /dev/null 2>&1 &
+else
+    if [ -f "$GIT_SSH_KEYFILE" ]; then
+        GIT_SSH_COMMAND="ssh -i $GIT_SSH_KEYFILE" git clone "$GIT_SOURCE_URL" "$GIT_TEMP_REPO" > /dev/null 2>&1 &
+    else
+        my_echo -ne "\r[\e[33m✗\e[0m] Clone: Wrong or missing $GIT_SSH_KEYFILE"
+        exit 1
+    fi
+fi
 spinner_pid=$!
 show_spinner $spinner_pid "clone"
 
 # pull branches...
 local_branches=$(git -C $GIT_TEMP_REPO branch | sed 's/\*//g' | awk '{$1=$1};1')
 git -C $GIT_TEMP_REPO branch -r | grep -v '\->' | while read remote; do
-    branch_name="${remote#origin/}"
-    if ! echo "$local_branches" | grep -q "$branch_name"; then
-        git -C $GIT_TEMP_REPO branch --track "$branch_name" "$remote"  > /dev/null 2>&1 &
-        spinner_pid=$!
-	show_spinner $spinner_pid "pull additional branch: $branch_name"
-    fi
+	branch_name="${remote#origin/}"
+	if ! echo "$local_branches" | grep -q "$branch_name"; then
+		git -C $GIT_TEMP_REPO branch --track "$branch_name" "$remote"
+		spinner_pid=$!
+		show_spinner $spinner_pid "pull additional branch: $branch_name"
+	fi
 done
+
 
 # Cleanup if necessary
 if [ -d $GIT_WORKING_COPY_DIR ]; then
@@ -353,6 +371,7 @@ done
 if [[ "$GIT_PROJECT_NAME" == "" ]]; then
 	GIT_PROJECT_NAME=$(basename $GIT_SOURCE_URL | sed 's/\.git//')
 fi
+
 
 ## Clean up older project symlink before create new link to latest result
 if [[ -e "$DEPLOY_DIR/$GIT_PROJECT_NAME" ]]; then
