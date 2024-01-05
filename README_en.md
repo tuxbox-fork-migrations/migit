@@ -28,36 +28,36 @@ The script requires the git-filter-repo tool. Make sure it is installed. See: ht
 ## Use
 Specify the clone URL of the Git repository to be rewritten.
 ```
- ./migit -u <clone url> [options]
+ ./migit -u <clone url> [OPTIONS]
 ```
 If the URL is the first argument, then specifying the '-u' flag can be omitted.
 ```
- ./migit <clone url> [options]
+ ./migit <clone url> [OPTIONS]
 ```
 The protocols supported are http, https, git and ssh. For local paths, only use the relative path to the repository!
 
 ## Options
 * Pattern prefix for source commit URL. This specifies the entry for the link to the source commit, which is prefixed to the commit ID.
 ```
- -P, --pattern-source-url=<pattern>
+ -P, --pattern-source-url=<PATTERN>
 ```
 
 
 * Name of the target folder within the deploy folder. Default: Name of the cloned project and timestamp of the rewrite. By default, the project name is generated from the clone URL.
 ```
- -T, --target-root-project-name=<name>
+ -T, --target-root-project-name=<NAME>
 ```
 
 
 * Destination folder prefix that precedes the extracted repository name.
 ```
- -p, --project-name-prefix=<prefix>
+ -p, --project-name-prefix=<PREFIX>
 ```
 
 
 * Destination folder suffix appended to the extracted repository name.
 ```
- -s, --project-name-suffix=<suffix>
+ -s, --project-name-suffix=<SUFFIX>
 ```
 
 
@@ -73,26 +73,30 @@ If a repository is to be completely rewritten, then only specify one point witho
 * List of subdirectories to be rewritten. Directory listing must be surrounded by apostrophes 'sub1 sub2...'.
 Spaces are separators (default: all first-level subdirectories within the root directory)
 ```
- --subdir-list='<list>'
+ --subdir-list='<LIST>'
 ```
 
 
 * List of subdirectories not to be extracted. List must be surrounded by apostrophes 'subx suby...'. Space as a separator.
 ```
- --exclude-subdir-list='<list>'
+ --exclude-subdir-list='<LIST>'
 ```
 
 
 * Pattern for commit introductions in the first line of all commits. Default: the respective subdirectory name or the original repo name.
 This makes sense if you generally want a uniform introduction to the commit message.
 ```
- --commit-introduction=<pattern>
+ --commit-introduction=<PATTERN>
 ```
 
+* Adds a signature (in the sense of a suffix) to the end of each modified commit message.
+```
+ --commit-suffix=<SUFFIX>
+```
 
 * Output directory (deploy folder) in which the rewritten repositories are stored. Default: ./deploy
 ```
- -d, --deploy-dir=<dir>
+ -d, --deploy-dir=<DIR>
 ```
 
 * Suppresses the progress bar
@@ -125,7 +129,7 @@ subdir1: this is a commit message
 
 ### Extract specific subdirectory of a repository specifying the source commit
 ```
-./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1
+./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1 --commit-suffix=' Automatically migrated by Migit'
 ```
 Commits are rewritten like this:
 ```
@@ -142,6 +146,10 @@ Commits are rewritten like this:
     Origin message what:
     ------------------
     - small fixes for something
+    
+    ------------------
+    Automatically migrated by Migit
+
 ```
 
 ### Extract multiple subdirectories of a repository specifying the source commit
