@@ -37,7 +37,7 @@ If the URL is the first argument, then specifying the '-u' flag can be omitted.
 The protocols supported are http, https, git and ssh. For local paths, only use the relative path to the repository!
 
 ## Options
-* Pattern prefix for source commit URL. This specifies the entry for the link to the source commit, which is prefixed to the commit ID.
+* Pattern for URL prefix for source commit URL. This specifies the entry for the link to the source commit, which is prefixed to the commit ID.
 ```bash
  -P, --pattern-source-url=<PATTERN>
 ```
