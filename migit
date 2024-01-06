@@ -282,15 +282,14 @@ function show_spinner() {
 	done
 
 	wait $pid
+	local error_code=$?
 
 	if [ $? -eq 0 ]; then
 		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 			my_echo -ne "\r[\e[32m✓\e[0m] ${message}\n"
 		fi
 	else
-		my_echo -ne "\r[✗] ${message} Error!\n"
-		local error_code=$?
-		my_echo -ne "\r[✗] ${message} Error: ${error_code}"
+		my_echo -ne "\r[✗] ${message} Error: ${error_code}\n"
 	fi
 }
 
