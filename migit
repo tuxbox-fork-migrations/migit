@@ -3,6 +3,8 @@
 VERSION="0.7"
 VERSION_STRING="$VERSION Copyright (C) 2023-2024 Thilo Graf, License: GPL2"
 
+EXEC_CALL="$0 $@"
+
 #set -e
 #set -x
 
@@ -241,6 +243,11 @@ while true; do
 	esac
 done
 
+## logging for quiet mode
+if [[ "$NO_PROGRESS" == "$TRUE" ]]; then
+	echo -e "------------------------------------------"
+	echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] [$EXEC_CALL]"
+fi
 
 # Check if the required options are provided
 if [[ -z "$GIT_SOURCE_URL" ]]; then
@@ -293,7 +300,6 @@ function show_spinner() {
 	fi
 }
 
-my_echo -e "------------------------------------------"
 # get start time
 start=$(date +%s)
 
@@ -319,7 +325,9 @@ local_branches=$(git -C "$GIT_TEMP_REPO" branch | sed 's/\*//g' | awk '{$1=$1};1
 git -C "$GIT_TEMP_REPO" branch -r | grep -v '\->' | while read remote; do
 	branch_name="${remote#origin/}"
 	if ! echo "$local_branches" | grep -q "^$branch_name$"; then
-		my_echo -n "[ ] Create missing branch: ${branch_name}"
+		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+			my_echo -n "[ ] Create missing branch: ${branch_name}"
+		fi
 		git -C $GIT_TEMP_REPO checkout -b "$branch_name" "$remote" > /dev/null 2>&1 &
 		spinner_pid=$!
 		show_spinner $spinner_pid "Create missing branch: ${branch_name}"
@@ -441,7 +449,9 @@ for SUBDIR in $REPOLIST; do
 		REPO_NAME="${TARGET_REPO_PREFIX}$(basename ${SUBDIR})${TARGET_REPO_SUFFIX}"
 	fi
 
-	my_echo -n "[ ] Rewriting ${REPO_NAME}"
+	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+		my_echo -n "[ ] Rewriting ${REPO_NAME}"
+	fi
 
 	if [ ! -d $SUBDIR ]; then
 		ERR_NOSUBDIR="$SUBDIR not found!"
@@ -538,7 +548,9 @@ for SUBDIR in $REPOLIST; do
 	fi
 	rm -rf $GIT_WORKING_COPY_DIR/$ORIGIN_REPO_NAME
 	if [ $? -eq 0 ]; then
-		my_echo -ne "\r[\e[32m✓\e[0m] clean up \n"
+		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+			my_echo -ne "\r[\e[32m✓\e[0m] clean up \n"
+		fi
 	else
 		my_echo -ne "\r[\e[33m✗\e[0m] Error!\n"
 		error_code=$?
@@ -558,7 +570,9 @@ for SUBDIR in $REPOLIST; do
 	mv $GIT_WORKING_COPY_DIR $DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP/$REPO_NAME
 
 	if [ $? -eq 0 ]; then
-		my_echo -ne "\r[\e[32m✓\e[0m] deploy\n"
+		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+			my_echo -ne "\r[\e[32m✓\e[0m] deploy\n"
+		fi
 		generated_repos+=" - $REPO_NAME\n"
 	else
 		my_echo -ne "\r[\e[33m✗\e[0m] Error!\n"
@@ -573,38 +587,37 @@ done
 ln -sf $DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP $DEPLOY_DIR/$GIT_PROJECT_NAME
 
 ## show results
-my_echo -e "------------------------------------------"
 entry_count=$(grep -o ' - ' <<< "$generated_repos" | wc -l)
-my_echo "Processed: $entry_count directories"
-my_echo -e "------------------------------------------"
+my_echo -e
+my_echo "Processed repositories: $entry_count"
 my_echo -e "$generated_repos"
 
-if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-	if [[ "$NOTES" != "" ]]; then
-		my_echo -e "------------------------------------------"
-		my_echo -e "\e[36mNotes:\e[0m"
-		my_echo -e "------------------------------------------"
-		my_echo -e "$NOTES"
-	fi
-	if [[ "$WARNINGS" != "" ]]; then
-		my_echo -e "------------------------------------------"
-		my_echo -e "\e[33mWarnings:\e[0m"
-		my_echo -e "------------------------------------------"
-		my_echo -e "$WARNINGS"
-	fi
-	#TODO: Errors are not yet listed
-	if [[ "$ERRORS" != "" ]]; then
-		my_echo -e "------------------------------------------"
-		my_echo -e "\e[31mErrors:\e[0m"
-		my_echo -e "------------------------------------------"
-		my_echo -e "$ERRORS"
-	fi
+if [[ "$NOTES" != "" ]]; then
+	my_echo -e "------------------------------------------"
+	my_echo -e "\e[36mNotes:\e[0m"
+	my_echo -e
+	my_echo -e "$NOTES"
 fi
+if [[ "$WARNINGS" != "" ]]; then
+	my_echo -e "------------------------------------------"
+	my_echo -e "\e[33mWarnings:\e[0m"
+	my_echo -e
+	my_echo -e "$WARNINGS"
+fi
+#TODO: Errors are not yet listed
+if [[ "$ERRORS" != "" ]]; then
+	my_echo -e "------------------------------------------"
+	my_echo -e "\e[31mErrors:\e[0m"
+	my_echo -e
+	my_echo -e "$ERRORS"
+fi
+
 
 # get end time
 end=$(date +%s)
 duration=$((end - start))
 minutes=$((duration / 60))
 seconds=$((duration % 60))
-my_echo -e "\n\e[1m\e[32mdone:\e[0m (elapsed time: $minutes min $seconds sec)"
+my_echo -e "\e[1m\e[32mdone :-)\e[0m"
+my_echo -e "elapsed time: $minutes min $seconds sec"
 my_echo -e "------------------------------------------"
