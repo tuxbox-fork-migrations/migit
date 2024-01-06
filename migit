@@ -311,18 +311,41 @@ start=$(date +%s)
 if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 	my_echo -n "[ ] Clone: $GIT_SOURCE_URL"
 fi
+
+clone_repo() {
+	git clone "$GIT_SOURCE_URL" "$GIT_TEMP_REPO" > /dev/null 2>&1
+}
+
+handle_clone_error() {
+	my_echo -e "\e[1A[\e[31m✗\e[0m] Clone failed: $GIT_SOURCE_URL"
+	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+		exit 1
+	else
+		exit 0 # exit if the script used for automation
+	fi
+}
+
 if [[ "$GIT_SSH_KEYFILE" == "" ]]; then
-	git clone "$GIT_SOURCE_URL" "$GIT_TEMP_REPO" > /dev/null 2>&1 &
+	clone_repo &
 else
-    if [ -f "$GIT_SSH_KEYFILE" ]; then
-        GIT_SSH_COMMAND="ssh -i $GIT_SSH_KEYFILE" git clone "$GIT_SOURCE_URL" "$GIT_TEMP_REPO" > /dev/null 2>&1 &
-    else
-        my_echo -ne "\r[\e[33m✗\e[0m] Clone: Wrong or missing $GIT_SSH_KEYFILE"
-        exit 1
-    fi
+	if [ -f "$GIT_SSH_KEYFILE" ]; then
+		GIT_SSH_COMMAND="ssh -i $GIT_SSH_KEYFILE" clone_repo &
+	else
+		my_echo -e "\r[\e[33m✗\e[0m] Clone: Wrong or missing ssh key file: $GIT_SSH_KEYFILE"
+		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+			exit 1
+		else
+			exit 0 # exit if the script used for automation
+		fi
+	fi
 fi
 spinner_pid=$!
 show_spinner $spinner_pid "Clone"
+wait $!  # wait for background process
+if [[ $? -ne 0 ]]; then
+    handle_clone_error
+fi
+
 
 # pull branches...
 local_branches=$(git -C "$GIT_TEMP_REPO" branch | sed 's/\*//g' | awk '{$1=$1};1')
