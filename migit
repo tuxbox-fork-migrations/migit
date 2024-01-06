@@ -115,7 +115,7 @@ LONGOPTIONS+=$LONGOPTIONS_OBSOLETE
 # Parse options
 PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@")
 if [ $? != 0 ]; then
-	# getopt hat einen Fehler zurückgegeben
+	# getopt returned an error
 	exit 2
 fi
 
@@ -226,7 +226,7 @@ while true; do
 		break
 		;;
 		*)
-		echo "Unerwartete Option: $1"
+		echo "Unexpected option: $1"
 		exit 3
 		;;
 	esac
@@ -285,7 +285,7 @@ function show_spinner() {
 	fi
 }
 
-
+my_echo -e "------------------------------------------"
 # get start time
 start=$(date +%s)
 
