@@ -89,10 +89,8 @@ show_help() {
 	echo "  -q                                      Don't show progress"
 }
 
-# Check if git-filter-repo is available.
-if command -v $GIT_FILTER_REPO_EXEC &> /dev/null; then
-	GIT_FILTER_REPO_EXEC+=" --quiet --prune-empty auto"
-else
+# Validate git-filter-repo
+if [ -z "$GIT_FILTER_REPO_EXEC" ]; then
 	echo " -------------------------------------------------------------------"
 	echo " $GIT_FILTER_REPO_NAME is not installed."
 	echo " Make sure $GIT_FILTER_REPO_NAME is installed."
@@ -103,140 +101,65 @@ else
 	exit 1
 fi
 
-# Process the options
+# Define options
+OPTIONS=u:nP:T:p:s:S:d:m:qh
+LONGOPTIONS=id-rsa-file:,prefix-source-url:,target-root-project-name:,project-name-prefix:,project-name-suffix:,subdir-list:,exclude-subdir-list:,commit-introduction:,commit-suffix:,deploy-dir:,mailmap-file:,no-backups,version,help
 
-# Handle logic to get GIT_SOURCE_URL, so we can use the first argument always as url, if no -u option was defined
-GIT_SOURCE_URL=""
-next_is_url=false
-first_arg=true
+# For downward compatibility
+OPTIONS_OBOLET=
+LONGOPTIONS_OBSOLETE=,pattern-source-url:
 
-for arg in "$@"
-do
-	if [[ $arg == "-u" ]]; then
-		next_is_url=true
-	elif [[ $next_is_url == true ]]; then
-		GIT_SOURCE_URL=$arg
-		next_is_url=false
-		break # Beendet die Schleife, da die URL gefunden wurde
-	elif [[ $first_arg == true && ( $arg =~ ^(http|https):// || $arg =~ ^/ || $arg =~ ^(\./|\../) ) ]]; then
-		GIT_SOURCE_URL=$arg
-		first_arg=false
-		shift # remove first argument, because it's already an url or a local path
-	elif [[ $first_arg == true && ( $arg =~ ^(git|ssh)@ || $arg =~ ^/ || $arg =~ ^(\./|\../) ) ]]; then
-		GIT_SOURCE_URL=$arg
-		first_arg=false
-		shift # remove first argument, because it's already an url or a local path
-	else
-		first_arg=false
-	fi
-done
+OPTIONS+=$OPTIONS_OBOLET
+LONGOPTIONS+=$LONGOPTIONS_OBSOLETE
 
-# Original argument processing logic
-while [[ $# -gt 0 ]]; do
-	key="$1"
+# Parse options
+PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@")
+if [ $? != 0 ]; then
+	# getopt hat einen Fehler zurückgegeben
+	exit 2
+fi
 
-	case $key in
-		-u|--clone-url)
+# Evaluate parsed argument strings
+eval set -- "$PARSED"
+
+# run through options
+while true; do
+	case "$1" in
+		-u)
 		GIT_SOURCE_URL="$2"
-		shift
-		shift
+		shift 2
 		;;
-		-n|--no-rewrite-messages)
+		-n)
 		MESSAGES_REWRITE="$FALSE"
 		shift
-		shift
 		;;
-		--no-backup|--no-backups)
-		NO_BACKUPS="$TRUE"
-		NOTES+="Backups are disabled!"
-		shift
-		shift
-		;;
-		--clone-url=*)
-		GIT_SOURCE_URL="${key#*=}"
-		shift
-		;;
-		-P|--pattern-source-url)
+		-P)
 		GIT_SRC_COMMIT_URL_PREFIX="$2"
-		shift
-		shift
+		shift 2
 		;;
-		--pattern-source-url=*|--prefix-source-url=*)
-		GIT_SRC_COMMIT_URL_PREFIX="${key#*=}"
-		shift
-		;;
-		-T|--target-root-project-name)
+		-T)
 		GIT_PROJECT_NAME="$2"
-		shift
-		shift
+		shift 2
 		;;
-		--target-root-project-name=*)
-		GIT_PROJECT_NAME="${key#*=}"
-		shift
-		;;
-		-p|--project-name-prefix)
+		-p)
 		TARGET_REPO_PREFIX="$2"
-		shift
-		shift
+		shift 2
 		;;
-		--project-name-prefix=*)
-		TARGET_REPO_PREFIX="${key#*=}"
-		shift
-		;;
-		-s|--project-name-suffix)
+		-s)
 		TARGET_REPO_SUFFIX="$2"
-		shift
-		shift
+		shift 2
 		;;
-		--project-name-suffix=*)
-		TARGET_REPO_SUFFIX="${key#*=}"
-		shift
-		;;
-		-S|--subdir)
+		-S)
 		REPOLIST="$2"
-		shift
-		shift
+		shift 2
 		;;
-		--subdir-list=*)
-		REPOLIST="${key#*=}"
-		shift
-		;;
-		--exclude-subdir-list=*)
-		EXCLUDE_REPOLIST="${key#*=}"
-		shift
-		;;
-		--commit-introduction=*)
-		GIT_COMMIT_INTRO="${key#*=}"
-		shift
-		shift
-		;;
-		--commit-suffix=*)
-		GIT_COMMIT_SUFFIX="${key#*=}"
-		shift
-		shift
-		;;
-		-d|--deploy-dir)
+		-d)
 		DEPLOY_DIR="$2"
-		shift
-		shift
-		;;
-		--id-rsa-file=*)
-		GIT_SSH_KEYFILE="${key#*=}"
-		shift
-		shift
-		;;
-		--deploy-dir=*)
-		DEPLOY_DIR="${key#*=}"
-		shift
+		shift 2
 		;;
 		-m)
 		MAILMAP_FILE="$2"
-		shift
-		shift
-		;;
-		--mailmap-file=*)
-		MAILMAP_FILE="${key#*=}"
-		shift
+		shift 2
 		;;
 		-q)
 		NO_PROGRESS="$TRUE"
@@ -246,17 +169,69 @@ while [[ $# -gt 0 ]]; do
 		show_help
 		exit 0
 		;;
-		--version)
-		echo $VERSION
-		exit 0
+		--id-rsa-file)
+		GIT_SSH_KEYFILE="$2"
+		shift 2
+		;;
+		--prefix-source-url)
+		GIT_SRC_COMMIT_URL_PREFIX="$2"
+		shift 2
+		;;
+		--pattern-source-url)
+		GIT_SRC_COMMIT_URL_PREFIX="$2"
+		shift 2
+		;;
+		--target-root-project-name)
+		GIT_PROJECT_NAME="$2"
+		shift 2
+		;;
+		--project-name-prefix)
+		TARGET_REPO_PREFIX="$2"
+		shift 2
+		;;
+		--project-name-suffix)
+		TARGET_REPO_SUFFIX="$2"
+		shift 2
+		;;
+		--subdir-list)
+		REPOLIST="$2"
+		shift 2
+		;;
+		--exclude-subdir-list)
+		EXCLUDE_REPOLIST="$2"
+		shift 2
+		;;
+		--commit-introduction)
+		GIT_COMMIT_INTRO="$2"
+		shift 2
+		;;
+		--commit-suffix)
+		GIT_COMMIT_SUFFIX="$2"
+		shift 2
+		;;
+		--deploy-dir)
+		DEPLOY_DIR="$2"
+		shift 2
+		;;
+		--mailmap-file)
+		MAILMAP_FILE="$2"
+		shift 2
+		;;
+		--no-backups)
+		NO_BACKUPS="$TRUE"
+		shift
+		;;
+		--)
+		shift
+		break
 		;;
 		*)
-		echo "$0: Invalid option: $key" >&2
-		show_help
-		exit 1
+		echo "Unerwartete Option: $1"
+		exit 3
 		;;
 	esac
 done
+
 
 # Check if the required options are provided
 if [[ -z "$GIT_SOURCE_URL" ]]; then
