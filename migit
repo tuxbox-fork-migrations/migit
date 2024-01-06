@@ -249,10 +249,14 @@ if [[ "$NO_PROGRESS" == "$TRUE" ]]; then
 	echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] [$EXEC_CALL]"
 fi
 
-# Check if the required options are provided
+## Check if the required options are provided
+## Check clone url
 if [[ -z "$GIT_SOURCE_URL" ]]; then
 	echo "Clone URL was not specified."
 	show_help
+	exit 1
+elif [[ "$GIT_SOURCE_URL" == file:* ]]; then
+	echo "Invalid protocol: 'file://' is not allowed. Please use a relative path for local access."
 	exit 1
 fi
 
