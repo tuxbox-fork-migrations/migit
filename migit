@@ -392,10 +392,15 @@ if [[ "$GIT_SRC_COMMIT_URL_PREFIX" == "" ]]; then
 	GIT_SRC_COMMIT_URL_PREFIX="${url%\.git}/commit"
 fi
 ## check source commit url prefix
-wget --spider -q "$GIT_SRC_COMMIT_URL_PREFIX"
-weget_exit_stat=$?
-spinner_pid=$!
-show_spinner $spinner_pid "Check url source commit prefix URL: \e[1m$GIT_SRC_COMMIT_URL_PREFIX\e[0m ..."
+if [[ "$GIT_SRC_COMMIT_URL_PREFIX" == *"@"* ]]; then
+	# git or ssh is not usable
+	weget_exit_stat=8
+else
+	wget --spider -q "$GIT_SRC_COMMIT_URL_PREFIX"
+	weget_exit_stat=$?
+	spinner_pid=$!
+	show_spinner $spinner_pid "Check url source commit prefix URL: \e[1m$GIT_SRC_COMMIT_URL_PREFIX\e[0m ..."
+fi
 if [ $weget_exit_stat -ne 0 ]; then
 	NOTE_ORIG_COMMIT="Check url source commit prefix failed! URL: \e[33m$GIT_SRC_COMMIT_URL_PREFIX\e[0m"
 	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
