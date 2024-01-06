@@ -106,10 +106,10 @@ OPTIONS=u:nP:T:p:s:S:d:m:qh
 LONGOPTIONS=id-rsa-file:,prefix-source-url:,target-root-project-name:,project-name-prefix:,project-name-suffix:,subdir-list:,exclude-subdir-list:,commit-introduction:,commit-suffix:,deploy-dir:,mailmap-file:,no-backups,version,help
 
 # For downward compatibility
-OPTIONS_OBOLET=
+OPTIONS_OBSOLETE=
 LONGOPTIONS_OBSOLETE=,pattern-source-url:
 
-OPTIONS+=$OPTIONS_OBOLET
+OPTIONS+=$OPTIONS_OBSOLETE
 LONGOPTIONS+=$LONGOPTIONS_OBSOLETE
 
 # Parse options
