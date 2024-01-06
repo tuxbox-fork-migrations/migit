@@ -12,7 +12,6 @@ FALSE="0"
 # Default values for the variables
 TARGET_REPO_PREFIX=""
 TARGET_REPO_SUFFIX=""
-GIT_SRC_COMMIT_URL_PREFIX=""
 GIT_PROJECT_NAME=""
 GIT_COMMIT_INTRO=""
 GIT_COMMIT_SUFFIX=""
@@ -38,6 +37,11 @@ ERRORS=""
 WARNINGS=""
 NOTES=""
 
+# Defaults for origin commit URL web-links
+GIT_SRC_COMMIT_URL_PREFIX=""
+GIT_SRC_COMMIT_URL_SUFFIX=""
+GIT_ORIGIN_COMMIT_URL_BASE=
+
 # Function to display script help
 show_help() {
 	echo
@@ -57,7 +61,8 @@ show_help() {
 	echo " Options:"
 	echo "  Handling for ssh access:"
 	echo "      --id-rsa-file=<PATH>                Path to your privat key file e.g. ~/.ssh/id_rsa"
-	echo "  Handling of subdirectories:"
+	echo
+	echo "  Handling of subdirectories to extract:"
 	echo "  -S, --subdir                            Subdirectory which to be rewritten."
 	echo "                                          If a complete root directory, meaning the repository at once, should be rewritten, specify only a dot without any further directories '--subdir .'"
 	echo "      --subdir-list=<LIST>                List of subdirectories to be rewritten. The list must be enclosed in ''. Use spaces as separators (Default: All subdirectories of the first level within the root directory)"
@@ -103,7 +108,7 @@ fi
 
 # Define options
 OPTIONS=u:nP:T:p:s:S:d:m:qh
-LONGOPTIONS=id-rsa-file:,prefix-source-url:,target-root-project-name:,project-name-prefix:,project-name-suffix:,subdir-list:,exclude-subdir-list:,commit-introduction:,commit-suffix:,deploy-dir:,mailmap-file:,no-backups,version,help
+LONGOPTIONS=id-rsa-file:,prefix-source-url:,suffix-source-url:,target-root-project-name:,project-name-prefix:,project-name-suffix:,subdir-list:,exclude-subdir-list:,commit-introduction:,commit-suffix:,deploy-dir:,mailmap-file:,no-backups,version,help
 
 # For downward compatibility
 OPTIONS_OBSOLETE=
@@ -175,6 +180,10 @@ while true; do
 		;;
 		--prefix-source-url)
 		GIT_SRC_COMMIT_URL_PREFIX="$2"
+		shift 2
+		;;
+		--suffix-source-url)
+		GIT_SRC_COMMIT_URL_SUFFIX="$2"
 		shift 2
 		;;
 		--pattern-source-url)
@@ -266,7 +275,7 @@ function show_spinner() {
 	while kill -0 $pid 2>/dev/null; do
 		for i in $(seq 0 3); do
 			if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-				my_echo -ne "\r[${spinner:$i:1}] $message"
+				my_echo -ne "\r[${spinner:$i:1}] ${message}"
 				sleep 0.1
 			fi
 		done
@@ -276,12 +285,12 @@ function show_spinner() {
 
 	if [ $? -eq 0 ]; then
 		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-			my_echo -ne "\r[\e[32m✓\e[0m] $message\n"
+			my_echo -ne "\r[\e[32m✓\e[0m] ${message}\n"
 		fi
 	else
-		my_echo -ne "\r[✗] $message Error!\n"
+		my_echo -ne "\r[✗] ${message} Error!\n"
 		local error_code=$?
-		my_echo -ne "\r[✗] $message Error: $error_code"
+		my_echo -ne "\r[✗] ${message} Error: ${error_code}"
 	fi
 }
 
@@ -363,27 +372,50 @@ fi
 if [[ "$GIT_SRC_COMMIT_URL_PREFIX" == "" ]]; then
 	GIT_PROJECT_NAME=$(basename $GIT_SOURCE_URL | sed 's/\.git//')
 	url="$GIT_SOURCE_URL"
-	# Entfernen von .git und Anhängen von /commit
-	GIT_SRC_COMMIT_URL_PREFIX="${url%\.git}/commit"
+	# Entfernen von .git
+	GIT_SRC_COMMIT_URL_PREFIX="${url%\.git}${GIT_SRC_COMMIT_URL_SUFFIX}"
 fi
-## check source commit url prefix
+
+## check preset url prefix for source commit
+GIT_ORIGIN_COMMIT_URL_BASE="${GIT_SRC_COMMIT_URL_PREFIX}${GIT_SRC_COMMIT_URL_SUFFIX}"
 if [[ "$GIT_SRC_COMMIT_URL_PREFIX" == *"@"* ]]; then
 	# git or ssh is not usable
-	weget_exit_stat=8
+	wget_exit_stat=7
 else
-	wget --spider -q "$GIT_SRC_COMMIT_URL_PREFIX"
-	weget_exit_stat=$?
+	# get output of wget into variable
+	wget_output=$(wget --spider "${GIT_ORIGIN_COMMIT_URL_BASE}" 2>&1)
+	wget_exit_stat=$?
 	spinner_pid=$!
-	show_spinner $spinner_pid "Check url source commit prefix URL: \e[1m$GIT_SRC_COMMIT_URL_PREFIX\e[0m ..."
+	show_spinner $spinner_pid "Check url source commit prefix URL: \e[1m${GIT_ORIGIN_COMMIT_URL_BASE}\e[0m ..."
+
+	# check for 301 Moved Permanently in wget_output
+	if [ $wget_exit_stat -ne 0 ]; then
+		if echo "$wget_output" | grep -q "301 Moved Permanently"; then
+			# Behandle 301 als Erfolg
+			wget_exit_stat=0
+		fi
+	fi
 fi
-if [ $weget_exit_stat -ne 0 ]; then
-	NOTE_ORIG_COMMIT="Check url source commit prefix failed! URL: \e[33m$GIT_SRC_COMMIT_URL_PREFIX\e[0m"
+if [ $wget_exit_stat -ne 0 ]; then
+	if [ $wget_exit_stat -eq 7 ]; then
+		err_desc="An error occurred in the protocol or in supporting a protocol. Use URL's with http:// or https:// only!"
+	elif [ $wget_exit_stat -eq 8 ]; then
+		err_desc="Set Parameter -P to set a valid source commit prefix for source commits."
+	else
+		err_desc="Error: $wget_exit_stat"
+	fi
+
+	NOTE_ORIG_COMMIT="Check url source commit prefix failed! URL: \e[33m${GIT_ORIGIN_COMMIT_URL_BASE}\e[0m"
+
 	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 		my_echo -ne "\e[1A[\e[33m!\e[0m] $NOTE_ORIG_COMMIT\n"
 	fi
-	NOTES+=" - $NOTE_ORIG_COMMIT\n   Set Parameter -P to set a valid source commit prefix for source commits."
-	GIT_SRC_COMMIT_URL_PREFIX=""
+
+	NOTES+=" - $NOTE_ORIG_COMMIT\n   $err_desc"
+
+	GIT_ORIGIN_COMMIT_URL_BASE=""
 fi
+
 
 ## set time stamp
 TIME_STAMP="$(date +%Y-%m%d-%H%M%S)"
@@ -398,7 +430,7 @@ for SUBDIR in $REPOLIST; do
 
 	# Ensure we are in the working copy
 	cd $GIT_WORKING_COPY_DIR
-	
+
 	# ...set repo name if only origin is output
 	if [[ "$SUBDIR" == "." ]]; then
 		# Create the original repo name from the original clone URL
@@ -424,7 +456,7 @@ for SUBDIR in $REPOLIST; do
 		if [[ "$SUBDIR" == "." ]]; then
 			PATH_OPTION=
 		fi
-	
+
 	MAILMAP_OPTION=""
 
 	if [ -f $MAILMAP_FILE ]; then
@@ -441,12 +473,11 @@ for SUBDIR in $REPOLIST; do
 # 	 my_echo "$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS"
 # 	 exit 0
 
-
 	# Adjust commit messages, include origin data, and normalize author names with emails
 	if [[ "$MESSAGES_REWRITE" != "$TRUE" ]]; then
 		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS > /dev/null 2>&1 &
 		spinner_pid=$!
-		show_spinner $spinner_pid "rewriting"
+		show_spinner ${spinner_pid} "Rewriting "
 		NOTES+="Commit messages not rewritten"
 	else
 		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS --commit-callback '
@@ -465,8 +496,8 @@ for SUBDIR in $REPOLIST; do
 		b"Branch: " + b"'$(git symbolic-ref HEAD)'" + b"\n"
 
 		# Add the link to the source commit
-		if "'"$GIT_SRC_COMMIT_URL_PREFIX"'" != "":
-		    commit.message += b"Commit: '"$GIT_SRC_COMMIT_URL_PREFIX"'/" + commit.original_id + b"\n"
+		if "'"$GIT_ORIGIN_COMMIT_URL_BASE"'" != "":
+		    commit.message += b"Commit: '"$GIT_ORIGIN_COMMIT_URL_BASE"'/" + commit.original_id + b"\n"
 
 		# Add author, date, and origin message
 		commit.message += b"Author: " + commit.author_name + b" <" + commit.author_email + b">\n" + \
@@ -500,7 +531,7 @@ for SUBDIR in $REPOLIST; do
 		commit.message = commit.message.replace(b"  ", b" ")
 		'  > /dev/null 2>&1 &
 		spinner_pid=$!
-		show_spinner $spinner_pid "rewriting "
+		show_spinner ${spinner_pid} "Rewriting "
 	fi
 	
 	# Cleanup
@@ -577,5 +608,5 @@ end=$(date +%s)
 duration=$((end - start))
 minutes=$((duration / 60))
 seconds=$((duration % 60))
-my_echo -e "\e[1m\e[32mdone:\e[0m (elapsed time: $minutes min $seconds sec)"
+my_echo -e "\n\e[1m\e[32mdone:\e[0m (elapsed time: $minutes min $seconds sec)"
 my_echo -e "------------------------------------------"
