@@ -260,9 +260,9 @@ fi
 # Function to replace the echo command, for usage with the -q optiom
 function my_echo() {
 	if [ "$NO_PROGRESS" == "$FALSE" ]; then
-		echo "$@"
+		echo "${@}"
 	else
-		echo "$@" | sed -r "s/\x1B\[[0-9;]*[a-zA-Z]//g"
+		echo "${@}" | sed -r "s/\x1B\[[0-9;]*[a-zA-Z]//g"
 	fi
 }
 
@@ -436,14 +436,13 @@ for SUBDIR in $REPOLIST; do
 		# Create the original repo name from the original clone URL
 		# Remove .git extension from URL
 		GIT_SOURCE=$(my_echo "$GIT_SOURCE_URL" | sed 's/\.git$//')
-		REPO_NAME="${TARGET_REPO_PREFIX}$(basename $GIT_SOURCE)${TARGET_REPO_SUFFIX}"
+		REPO_NAME="${TARGET_REPO_PREFIX}$(basename ${GIT_SOURCE})${TARGET_REPO_SUFFIX}"
 	else
 		# Assemble the target folder name. This is the repo that will be generated from the subdirectory.
-		REPO_NAME="${TARGET_REPO_PREFIX}$(basename $SUBDIR)${TARGET_REPO_SUFFIX}"
+		REPO_NAME="${TARGET_REPO_PREFIX}$(basename ${SUBDIR})${TARGET_REPO_SUFFIX}"
 	fi
 
-
-	my_echo -ne "\nprocessing $REPO_NAME..."
+	my_echo -n "[ ] Rewriting ${REPO_NAME}"
 
 	if [ ! -d $SUBDIR ]; then
 		ERR_NOSUBDIR="$SUBDIR not found!"
@@ -477,7 +476,7 @@ for SUBDIR in $REPOLIST; do
 	if [[ "$MESSAGES_REWRITE" != "$TRUE" ]]; then
 		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS > /dev/null 2>&1 &
 		spinner_pid=$!
-		show_spinner ${spinner_pid} "Rewriting "
+		show_spinner ${spinner_pid} "Rewriting ${REPO_NAME}"
 		NOTES+="Commit messages not rewritten"
 	else
 		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS --commit-callback '
@@ -531,7 +530,7 @@ for SUBDIR in $REPOLIST; do
 		commit.message = commit.message.replace(b"  ", b" ")
 		'  > /dev/null 2>&1 &
 		spinner_pid=$!
-		show_spinner ${spinner_pid} "Rewriting "
+		show_spinner ${spinner_pid} "Rewriting ${REPO_NAME}"
 	fi
 	
 	# Cleanup
