@@ -457,7 +457,7 @@ else
 	wget_output=$(wget --spider "${GIT_ORIGIN_COMMIT_URL_BASE}" 2>&1)
 	wget_exit_stat=$?
 	spinner_pid=$!
-	show_spinner $spinner_pid "Check url source commit prefix URL: \e[1m${GIT_ORIGIN_COMMIT_URL_BASE}\e[0m ..."
+	show_spinner $spinner_pid "Check for URL source commit prefix URL: \e[1m${GIT_ORIGIN_COMMIT_URL_BASE}\e[0m ..."
 
 	# check for 301 Moved Permanently in wget_output
 	if [ $wget_exit_stat -ne 0 ]; then
@@ -472,17 +472,19 @@ if [ $wget_exit_stat -ne 0 ]; then
 		err_desc="An error occurred in the protocol or in supporting a protocol. Use URL's with http:// or https:// only!"
 	elif [ $wget_exit_stat -eq 8 ]; then
 		err_desc="Set Parameter -P to set a valid source commit prefix for source commits."
+	elif [ $wget_exit_stat -eq 1 ]; then
+		err_desc=""
 	else
 		err_desc="Error: $wget_exit_stat"
 	fi
 
-	NOTE_ORIG_COMMIT="Check url source commit prefix failed! URL: \e[33m${GIT_ORIGIN_COMMIT_URL_BASE}\e[0m"
+	WARN_ORIG_COMMIT="Check for URL source commit prefix failed! URL: [\e[33m${GIT_ORIGIN_COMMIT_URL_BASE}\e[0m]"
 
 	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-		my_echo -ne "\e[1A[\e[33m!\e[0m] $NOTE_ORIG_COMMIT\n"
+		my_echo -ne "\e[1A[\e[33m!\e[0m] Warning! $WARN_ORIG_COMMIT\n"
 	fi
 
-	NOTES+=" - $NOTE_ORIG_COMMIT\n   $err_desc"
+	WARNINGS+=" - $WARN_ORIG_COMMIT\n   Entry of the origin commits was skipped. $err_desc\n"
 
 	GIT_ORIGIN_COMMIT_URL_BASE=""
 fi
@@ -536,7 +538,7 @@ for SUBDIR in $REPOLIST; do
 	else
 		if [[ "$MAILMAP_FILE" != "" ]]; then
 			WARN_NOMAILMAP="Mailmap file not found!"
-			my_echo -ne "\r[\e[33m!\e[0m] Warning: $WARN_NOMAILMAP\n"
+			my_echo -ne "\r[\e[33m!\e[0m] Warning! $WARN_NOMAILMAP\n"
 			WARNINGS+=" - Rewriting: $WARN_NOMAILMAP\n"
 		fi
 	fi
@@ -631,12 +633,12 @@ for SUBDIR in $REPOLIST; do
 	
 	# Cleanup
 	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-		my_echo -n "[ ] clean up "
+		my_echo -n "[ ] Clean up "
 	fi
 	rm -rf $GIT_WORKING_COPY_DIR/$ORIGIN_REPO_NAME
 	if [ $? -eq 0 ]; then
 		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-			my_echo -ne "\r[\e[32m✓\e[0m] clean up \n"
+			my_echo -ne "\r[\e[32m✓\e[0m] Clean up \n"
 		fi
 	else
 		my_echo -ne "\r[\e[33m✗\e[0m] Error!\n"
@@ -650,16 +652,14 @@ for SUBDIR in $REPOLIST; do
 
 	## Prepare and move everything into the deploy directory...
 	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-		my_echo -n "[ ] deploy"
+		my_echo -n "[ ] Deploy"
 	fi
 
 	# ...move results from working directory into project directory	
 	mv $GIT_WORKING_COPY_DIR $DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP/$REPO_NAME
 
 	if [ $? -eq 0 ]; then
-		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-			my_echo -ne "\r[\e[32m✓\e[0m] deploy\n"
-		fi
+		my_echo -ne "\r[\e[32m✓\e[0m] Deploy: Rewritten repository saved in [\e[1m$DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP/$REPO_NAME\e[0m]\n"
 		generated_repos+=" - $REPO_NAME\n"
 	else
 		my_echo -ne "\r[\e[33m✗\e[0m] Error!\n"
