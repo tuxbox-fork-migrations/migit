@@ -61,9 +61,6 @@ show_help() {
 	echo "  $0 -u <clone url> [OPTIONS]"
 	echo
 	echo " Options:"
-	echo "  Handling for ssh access:"
-	echo "      --id-rsa-file=<PATH>                Path to your privat key file e.g. ~/.ssh/id_rsa"
-	echo
 	echo "  Handling of subdirectories to extract:"
 	echo "  -S, --subdir                            Subdirectory which to be rewritten."
 	echo "                                          If a complete root directory, meaning the repository at once, should be rewritten, specify only a dot without any further directories '--subdir .'"
@@ -89,6 +86,9 @@ show_help() {
 	echo
 	echo "  Normalize e-mails of authors:"
 	echo "  -m, --mailmap-file=<PATH>               Path to the mailmap file. If not specified, it will be searched for inside the script root folder by default. If no .mailmap file was found, normalization will be skipped."
+	echo
+	echo "  Handling for ssh access:"
+	echo "      --id-rsa-file=<PATH>                Path to your privat key file e.g. ~/.ssh/id_rsa"
 	echo
 	echo "  Global:"
 	echo "      --version                           Show $(basename "$0") version"
