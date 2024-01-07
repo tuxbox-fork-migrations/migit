@@ -94,6 +94,7 @@ Dies macht Sinn, wenn generell eine einheitliche Einleitung der Commit-Nachricht
  --commit-introduction=<PATTERN>
 ```
 
+
 * Fügt eine Signatur (im Sinne eines Suffix') an das Ende jeder modifizierten Commit Message an.
 ```bash
  --commit-suffix=<SUFFIX>
@@ -109,6 +110,11 @@ Dies macht Sinn, wenn generell eine einheitliche Einleitung der Commit-Nachricht
  -q
 ```
 
+* Relativer Pfad zur Privaten ssh Keydatei
+```bash
+ --id-rsa-file=<PATH>
+```
+
 
 ## Beispiele
 
@@ -116,7 +122,7 @@ Dies macht Sinn, wenn generell eine einheitliche Einleitung der Commit-Nachricht
 ```bash
 ./migit -u https://github.com/example/repository.git
 ```
-Commits werden so umgeschrieben:
+Commits werden generell so umgeschrieben:
 ```bash
 subdir1: this is a commit message
     
