@@ -435,10 +435,15 @@ fi
 
 ## preset url prefix for source commit
 if [[ "$GIT_SRC_COMMIT_URL_PREFIX" == "" ]]; then
+	GIT_SRC_COMMIT_URL_SUFFIX="/commit"
+fi
+
+## preset url prefix for source commit
+if [[ "$GIT_SRC_COMMIT_URL_PREFIX" == "" ]]; then
 	GIT_PROJECT_NAME=$(basename $GIT_SOURCE_URL | sed 's/\.git//')
 	url="$GIT_SOURCE_URL"
 	# Entfernen von .git
-	GIT_SRC_COMMIT_URL_PREFIX="${url%\.git}${GIT_SRC_COMMIT_URL_SUFFIX}"
+	GIT_SRC_COMMIT_URL_PREFIX="${url%\.git}"
 fi
 
 ## check preset url prefix for source commit
