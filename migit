@@ -268,18 +268,10 @@ my_exit() {
 if [[ -z "$GIT_SOURCE_URL" ]]; then
 	echo "Clone URL was not specified."
 	show_help
-	if [[ "$NO_PROGRESS" == "$TRUE" ]]; then
-		exit 1
-	else
-		exit 0 # only if the script is used in quiet mode within automation, e.g. in cron jobs
-	fi
+	my_exit 1
 elif [[ "$GIT_SOURCE_URL" == file:* ]]; then
 	echo "Invalid protocol: 'file://' is not allowed. Please use a relative path to a valid git repository for local access."
-		if [[ "$NO_PROGRESS" == "$TRUE" ]]; then
-		exit 1
-	else
-		exit 0 # only if the script is used in quiet mode within automation, e.g. in cron jobs
-	fi
+	my_exit 1
 fi
 
 # get absolute path of the current script
@@ -303,11 +295,7 @@ fi
 # Check if GIT_REPO_PATH is within SCRIPT_DIR
 if [[ "$GIT_REPO_PATH" == "$SCRIPT_DIR"* ]]; then
 	echo "Error: The specified git URL ('$GIT_SOURCE_URL') is located within the script's directory or its subdirectories. Please specify a different URL."
-	if [[ "$NO_PROGRESS" == "$TRUE" ]]; then
-		exit 1
-	else
-		exit 0 # only if the script is used in quiet mode within automation, e.g. in cron jobs
-	fi
+	my_exit 1
 fi
 
 ## Create deploy directory
@@ -368,11 +356,7 @@ clone_repo() {
 
 handle_clone_error() {
 	my_echo -e "\e[1A[\e[31m✗\e[0m] Clone failed: $GIT_SOURCE_URL"
-	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-		exit 1
-	else
-		exit 0 # exit if the script used for automation
-	fi
+	my_exit 1
 }
 
 if [[ "$GIT_SSH_KEYFILE" == "" ]]; then
@@ -382,11 +366,7 @@ else
 		GIT_SSH_COMMAND="ssh -i $GIT_SSH_KEYFILE" clone_repo &
 	else
 		my_echo -e "\r[\e[33m✗\e[0m] Clone: Wrong or missing ssh key file: $GIT_SSH_KEYFILE"
-		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-			exit 1
-		else
-			exit 0 # exit if the script used for automation
-		fi
+		my_exit 1
 	fi
 fi
 spinner_pid=$!
