@@ -249,6 +249,20 @@ if [[ "$NO_PROGRESS" == "$TRUE" ]]; then
 	echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] [$EXEC_CALL]"
 fi
 
+## Function to handle exit behavior
+my_exit() {
+	# set exit-Code as Parameter
+	local exit_code=$1
+
+	if [[ "$NO_PROGRESS" == "$TRUE" ]]; then
+		# only if the script is used in quiet mode within automation, e.g. in cron jobs
+		exit 0
+	else
+		# required exit code
+		exit $exit_code
+	fi
+}
+
 ## Check if the required options are provided
 ## Check clone url
 if [[ -z "$GIT_SOURCE_URL" ]]; then
