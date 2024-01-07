@@ -12,6 +12,7 @@ TRUE="1"
 FALSE="0"
 
 # Default values for the variables
+GIT_SOURCE_URL="$1"
 TARGET_REPO_PREFIX=""
 TARGET_REPO_SUFFIX=""
 GIT_PROJECT_NAME=""
