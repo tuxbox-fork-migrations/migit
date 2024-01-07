@@ -22,7 +22,7 @@ GIT_SSH_KEYFILE=""
 NO_BACKUPS="$FALSE"
 
 CUR_DIR=$(pwd)
-WORKDIR=$CUR_DIR/work
+export WORKDIR=$CUR_DIR/work
 ORIGIN_REPO_NAME=".origin-tmp"
 GIT_TEMP_REPO="$WORKDIR/$ORIGIN_REPO_NAME"
 GIT_WORKING_COPY_DIR=$WORKDIR/origin
@@ -537,7 +537,7 @@ for SUBDIR in $REPOLIST; do
 		if [[ "$MAILMAP_FILE" != "" ]]; then
 			WARN_NOMAILMAP="Mailmap file not found!"
 			my_echo -ne "\r[\e[33m!\e[0m] Warning: $WARN_NOMAILMAP\n"
-			WARNINGS+=" - $WARN_NOMAILMAP"
+			WARNINGS+=" - Rewriting: $WARN_NOMAILMAP\n"
 		fi
 	fi
 
@@ -555,12 +555,16 @@ for SUBDIR in $REPOLIST; do
 		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS --commit-callback '
 		import datetime
 		import re
+		import os
 
 		# Check if the commit message already contains the tag "Origin commit data"
 		# Skip rewriting for this commit as it is already been processed
 		# Convert byte string to normal string for comparison
+		workdir = os.environ["WORKDIR"]
 		origin_tmp = commit.message.decode("utf-8")
 		if "Origin commit data" in origin_tmp:
+		    with open(f"{workdir}/.rewrite", "w") as file:
+		        file.write("Original commit message(s) have already been rewritten!")
 		    return
 
 		# Preserve original message
@@ -610,8 +614,19 @@ for SUBDIR in $REPOLIST; do
 		# Final cleanup and finish, references will be cleaned up from the history as well
 		commit.message = commit.message.replace(b"  ", b" ")
 		'  > /dev/null 2>&1 &
+
 		spinner_pid=$!
 		show_spinner ${spinner_pid} "Rewriting ${REPO_NAME}"
+
+		# read information from file
+		if [[ -f "$WORKDIR/.rewrite" ]]; then
+			read_data=$(< ${WORKDIR}/.rewrite)
+			if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+				my_echo -e "\r[\e[33m!\e[0m] Warning! ${read_data}"
+			fi
+			WARNINGS+=" - Rewriting: $read_data Commit message(s) kept untouched.\n"
+			rm -f $WORKDIR/.rewrite
+		fi
 	fi
 	
 	# Cleanup
