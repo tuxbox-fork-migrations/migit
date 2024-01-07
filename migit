@@ -75,13 +75,14 @@ show_help() {
 	echo "  -s, --project-name-suffix=<SUFFIX>      Suffix of the target folder to be appended to the extracted repository name.     $DEPLOY_DIR/TARGET-ROOT-PROJECT/REPO<suffix>"
 	echo "                                          You can also combine both options:                                               $DEPLOY_DIR/TARGET-ROOT-PROJECT/<prefix>REPO<suffix>"
 	echo "      --no-backups                        Older extracted repositories will be overwritten. Only the latest extracted repositories are always stored in the deployment folder."
+	echo "  -T, --target-root-project-name=<NAME>   Name of the target folder within the deploy directory. Default: Current date and time of the rewrite."
 	echo
 	echo "  Handling of commit messages:"
 	echo "  -n, --no-rewrite-messages               Commit messages will be not touched, but paths will still be rewritten, and if a .mailmap file is available, authors will also be rewritten."
 	echo "  -P, --prefix-source-url=<PREFIX>        Prefix for the source commit URL. This sets the prefix for the link to the source commit, which is prepended to the commit ID."
-	echo "	    --pattern-source-url=<PATTERN>	Obsolete: The same like --prefix-source-url"
-	echo "  -T, --target-root-project-name=<NAME>   Name of the target folder within the deploy directory. Default: Current date and time of the rewrite."
-	echo "      --commit-introduction=<PATTERN>     Pattern for commit introductions in the first line of all commits. Default: the respective subdirectory name or the original repo name."
+	echo "      --suffix-source-url=<SUFFIX>        Suffix for the source commit URL. This sets the suffix for the link to the source commit, which is apended to the prefix (option -P) commit ID. Default: '/commit'"
+	echo "	                                        Note: --pattern-source-url=<PATTERN>	Obsolete: The same like --prefix-source-url"
+	echo "      --commit-introduction=<INTRO>       Intro for commit introductions in the first line of all commits. Default: the respective subdirectory name or the original repo name."
 	echo "                                          This only makes sense if a single repo is to be rewritten or if a consistent introduction of the commit message is desired."
 	echo "      --commit-suffix=<SUFFIX>            Adds a signature at the end of the modified commit message e.g a text 'Automatically migrated by Migit v.$VERSION'"
 	echo
