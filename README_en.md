@@ -41,11 +41,21 @@ The protocols supported are http, https, git and ssh. For local paths, only use 
 * Pattern for URL prefix for the source commit URL. This sets the link to the source commit to which the commit ID will be appended.
 ```bash
  -P, --prefix-source-url=<PREFIX> # from version 0.8
+ # --pattern-source-url=<PREFIX> is deprecated, but is still usable due to backwards compatibility!
 ```
-This parameter is optional and does not need to be specified explicitly. The prefix URL is automatically obtained from the clone URL, with only accessibility being checked.
-If this fails, this will be displayed. In such a case, no source commits are entered in the commits and it is recommended to set the parameter.
+The prefix URL is usually obtained automatically from the clone URL, with only accessibility being checked.
+If this fails, this will be displayed. In such a case, no source commits are entered into the rewritten commits and it is recommended to set the parameter.
 
-Note: --pattern-source-url=<PREFIX> is deprecated, but can still be used due to backwards compatibility!
+Example: A link to a commit on GitHub generally consists of the base address of the respective project and the commit hash.
+```bash
+ https://github.com/tuxbox-fork-migrations/migit/commit/942564882104d6de56eb817e6c5bbc3d4e66a5a3
+```
+The parameter should then be specified as follows:
+```bash
+ -P https://github.com/tuxbox-fork-migrations/migit/commit
+```
+It should also be noted that extracting the base address from local repositories or URLs for ssh or git protocols usually does not work. If a source commit link is desired,
+The parameter must be set explicitly to ensure that the base address is installed correctly. Otherwise the line for the link will not be entered.
 
 
 * Name of the target folder within the deploy folder. Default: Name of the cloned project and timestamp of the rewrite. By default, the project name is generated from the clone URL.
@@ -70,9 +80,11 @@ Note: --pattern-source-url=<PREFIX> is deprecated, but can still be used due to 
 ```bash
  -S, --subdir
 ```
-If a repository is to be completely rewritten, then only specify one point without any additional directories:
+If a repository is to be completely rewritten, this parameter can simply be omitted or just specify one point:
 ```bash
---subdir .
+ --subdir .
+#or
+  -S.
 ```
 
 * List of subdirectories to be rewritten. Directory listing must be surrounded by apostrophes 'sub1 sub2...'.
@@ -88,11 +100,12 @@ Spaces are separators (default: all first-level subdirectories within the root d
 ```
 
 
-* Pattern for commit introductions in the first line of all commits. Default: the respective subdirectory name or the original repo name.
-This makes sense if you generally want a uniform introduction to the commit message.
+* Sample commit introductions on the first line of each rewritten commit. Default: the respective subdirectory name or the original repo name.
+This especially makes sense if subdirectories are extracted and a uniform introduction to the commit message is generally desired.
 ```bash
  --commit-introduction=<PATTERN>
 ```
+
 
 * Adds a signature (in the sense of a suffix) to the end of each modified commit message.
 ```bash
@@ -104,9 +117,15 @@ This makes sense if you generally want a uniform introduction to the commit mess
  -d, --deploy-dir=<DIR>
 ```
 
-* Suppresses the progress bar
+* Suppresses the progress bar. This makes sense if the script is to be executed automatically, e.g. in cron jobs. In this mode, the script also returns EXIT_STAUTS 0 in the event of errors,
+so that the script does not abort possible automated tasks in which it is embedded, more complex processes. Only status logs are output, which contain information about the call and error messages. These outputs can be further used for logging.
 ```bash
  -q
+```
+
+* Relative path to the private ssh key file
+```bash
+ --id-rsa-file=<PATH>
 ```
 
 
@@ -116,7 +135,7 @@ This makes sense if you generally want a uniform introduction to the commit mess
 ```bash
 ./migit -u https://github.com/example/repository.git
 ```
-Commits are rewritten like this:
+Commits are generally rewritten like this:
 ```bash
 subdir1: this is a commit message
     
