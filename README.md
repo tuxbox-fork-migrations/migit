@@ -41,11 +41,21 @@ Als Protokolle werden http, https, git und ssh unterstützt. Für lokale Pfade, 
 * Muster für URL-Präfix für die Quellcommit URL. Dies legt den Link zum Quellcommit fest, an den die Commit-ID angehängt wird.
 ```bash
  -P, --prefix-source-url=<PREFIX> # ab Version 0.8
+ # --pattern-source-url=<PREFIX> ist veraltet, ist aber wegen der Abwärtskompatiblität weiterhin verwendbar!
 ```
-Dieser Parameter ist Optional und muss nicht explizit angegeben werden. Die Prefix-URL wird automatisch aus der Klon-URL gewonnen, wobei lediglich die Erreichbarkeit geprüft wird.
-Sollte dies fehlschlagen, wird dies angezeigt. In solch einem Fall, werden in die Commits auch keine Quellcommits eingetragen und es ist empfehlenswert den Parameter zu setzen.
+Die Prefix-URL wird normalerweise automatisch aus der Klon-URL gewonnen, wobei lediglich die Erreichbarkeit geprüft wird.
+Sollte dies fehlschlagen, wird dies angezeigt. In solch einem Fall, werden in die umgeschriebenen Commits auch keine Quellcommits eingetragen und es ist empfehlenswert den Parameter zu setzen.
 
-Hinweis:  --pattern-source-url=<PREFIX> ist veraltet, ist aber wegen der Abwärtskompatiblität weiterhin verwendbar!
+Beispiel: Ein Link zu einem Commit bei GitHub setzt sich generell aus der Basisadresse zum jeweiligen Projekt und dem Commit-Hash zusammen.
+```bash
+ https://github.com/tuxbox-fork-migrations/migit/commit/942564882104d6de56eb817e6c5bbc3d4e66a5a3
+```
+Der Parameter sollte dann entsprechend so angegeben werden:
+```bash
+ -P https://github.com/tuxbox-fork-migrations/migit/commit
+```
+Zu beachten wäre noch, dass die Extraktion der Basisadresse aus lokalen Repositorys oder URL's für ssh- bzw. git-Protolle in der Regel nicht funktioniert. Wenn ein Quell-Commit Link gwünscht ist,
+muss der Parameter explizit gesetzt werden, um sicherzustellen, dass die Basisadresse korrekt eingebaut wird. Andernfalls wird die Zeile für den Link nicht eingetragen.
 
 
 * Name des Zielordners innerhalb des Deploy-Ordners. Standard: Name des geklonten Projekts und Zeitstempel der Umschreibung. Der Projektname wird standardmäßig aus der Clone-URL generiert.
@@ -70,9 +80,11 @@ Hinweis:  --pattern-source-url=<PREFIX> ist veraltet, ist aber wegen der Abwärt
 ```bash
  -S, --subdir
 ```
-Soll ein Repository komplett umgeschrieben werden, dann nur einen Punkt ohne weitere Verzeichnisse angeben:
+Soll ein Repository komplett umgeschrieben werden, kann dieser Parameter einfach weggelassen werden oder einfach nur einen Punkt angeben:
 ```bash
---subdir .
+ --subdir .
+#oder
+  -S .
 ```
 
 * Liste von Unterverzeichnissen, die umgeschrieben werden sollen. Verzeichnisliste muss mit Apostrophen 'sub1 sub2 ...' umgeben sein.                       
@@ -88,8 +100,8 @@ Leerzeichen sind Trennzeichen (Standard: Alle Unterverzeichnisse der ersten Eben
 ```            
 
 
-* Muster für Commit Einleitungen in der ersten Zeile aller Commits. Standard: der jeweilige Unterverzeichnisname bzw. der Original-Reponame.
-Dies macht Sinn, wenn generell eine einheitliche Einleitung der Commit-Nachricht gewünscht ist.
+* Muster für Commit Einleitungen in der ersten Zeile jedes umgeschriebenen Commits. Standard: der jeweilige Unterverzeichnisname bzw. der Original-Reponame.
+Dies macht vorallem Sinn wenn Unterverzeichnisse extrahiert werden und generell eine einheitliche Einleitung der Commit-Nachricht gewünscht ist.
 ```bash
  --commit-introduction=<PATTERN>
 ```
@@ -105,7 +117,8 @@ Dies macht Sinn, wenn generell eine einheitliche Einleitung der Commit-Nachricht
  -d, --deploy-dir=<DIR>
 ```
 
-* Unterdrückt die Fortschrittsanzeige
+* Unterdrückt die Fortschrittsanzeige. Dies ist sinnvoll, wenn das Script automatisiert ausgeführt werden soll, z.B. in Cron-Jobs. Das Skript gibt außerdem in diesem Modus bei Fehlern den EXIT_STAUTS 0 zurück,
+damit das Skript mögliche automatisierte Aufgaben in dem es eingebettet ist, komplexere Vorgänge nicht abbricht. Es werden lediglich nur Statusprotokolle ausgegeben, welche Angaben zum Aufruf und Fehlermeldungen enthalten. Diese Ausgaben können zur Protollierung weiter verwendet werden.
 ```bash
  -q
 ```
