@@ -554,6 +554,14 @@ for SUBDIR in $REPOLIST; do
 	else
 		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS --commit-callback '
 		import datetime
+		import re
+
+		# Check if the commit message already contains the tag "Origin commit data"
+		# Skip rewriting for this commit as it is already been processed
+		# Convert byte string to normal string for comparison
+		origin_tmp = commit.message.decode("utf-8")
+		if "Origin commit data" in origin_tmp:
+		    return
 
 		# Preserve original message
 		origin_message = commit.message
