@@ -93,7 +93,7 @@ show_help() {
 	echo "      --id-rsa-file=<PATH>                Path to your privat key file e.g. ~/.ssh/id_rsa"
 	echo
 	echo "  Global:"
-	echo "      --version                           Show $(basename "$0") version"
+	echo "  -v, --version                           Show $(basename "$0") version"
 	echo "  -h, --help                              Show this help"
 	echo "  -q                                      Don't show progress"
 }
@@ -111,7 +111,7 @@ if [ -z "$GIT_FILTER_REPO_EXEC" ]; then
 fi
 
 # Define options
-OPTIONS=u:nP:T:p:s:S:d:m:qh
+OPTIONS=u:nP:T:p:s:S:d:m:qhv
 LONGOPTIONS=id-rsa-file:,prefix-source-url:,suffix-source-url:,target-root-project-name:,project-name-prefix:,project-name-suffix:,subdir-list:,exclude-subdir-list:,commit-introduction:,commit-suffix:,deploy-dir:,mailmap-file:,no-backups,version,help
 
 # For downward compatibility
@@ -176,6 +176,10 @@ while true; do
 		;;
 		-h|--help)
 		show_help
+		exit 0
+		;;
+		-v|--version)
+		echo "$VERSION"
 		exit 0
 		;;
 		--id-rsa-file)
