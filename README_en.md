@@ -128,6 +128,12 @@ so that the script does not abort possible automated tasks in which it is embedd
  --id-rsa-file=<PATH>
 ```
 
+* Resets all rewritten commit messages. This means that the entries that Migit entered in the commits will be removed again. Email and author descriptions remain unaffected.
+Please note that Migit can only reset entries that were made by Migit. Everything that was entered in the commit messages under “Origin commit data” is therefore removed.
+```bash
+ --reset
+```
+
 
 ## Examples
 
