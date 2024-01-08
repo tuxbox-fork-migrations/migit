@@ -128,6 +128,12 @@ damit das Skript mögliche automatisierte Aufgaben in dem es eingebettet ist, ko
  --id-rsa-file=<PATH>
 ```
 
+* Setzt alle umgeschriebene Commit-Messages wieder zurück. Das bedeutet, dass die Einträge, welche Migit in die Commits eingetragen hat, wieder entfernt werden. E-Mail- und Autoren-Umschreibungen bleiben unberührt.
+Zu beachten ist, dass Migit nur Eintragungen zurücksetzen kann, die von Migit vorgenommen wurden. Es wird daher alles entfernt, was innerhalb der Commit-Messages unter "Origin commit data" eingetragen wurde. 
+```bash
+ --reset
+```
+
 
 ## Beispiele
 
