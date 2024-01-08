@@ -20,6 +20,7 @@ GIT_COMMIT_INTRO=""
 GIT_COMMIT_SUFFIX=""
 GIT_SSH_KEYFILE=""
 NO_BACKUPS="$FALSE"
+RESET="$FALSE"
 
 CUR_DIR=$(pwd)
 export WORKDIR=$CUR_DIR/work
@@ -85,6 +86,7 @@ show_help() {
 	echo "      --commit-introduction=<INTRO>       Intro for commit introductions in the first line of all commits. Default: the respective subdirectory name or the original repo name."
 	echo "                                          This only makes sense if a single repo is to be rewritten or if a consistent introduction of the commit message is desired."
 	echo "      --commit-suffix=<SUFFIX>            Adds a signature at the end of the modified commit message e.g a text 'Automatically migrated by Migit v.$VERSION'"
+	echo "      --reset                             Revert all rewritten commit messages to their original state, provided they are recognized as such."
 	echo
 	echo "  Normalize e-mails of authors:"
 	echo "  -m, --mailmap-file=<PATH>               Path to the mailmap file. If not specified, it will be searched for inside the script root folder by default. If no .mailmap file was found, normalization will be skipped."
@@ -112,7 +114,7 @@ fi
 
 # Define options
 OPTIONS=u:nP:T:p:s:S:d:m:qhv
-LONGOPTIONS=id-rsa-file:,prefix-source-url:,suffix-source-url:,target-root-project-name:,project-name-prefix:,project-name-suffix:,subdir-list:,exclude-subdir-list:,commit-introduction:,commit-suffix:,deploy-dir:,mailmap-file:,no-backups,version,help
+LONGOPTIONS=id-rsa-file:,prefix-source-url:,suffix-source-url:,target-root-project-name:,project-name-prefix:,project-name-suffix:,subdir-list:,exclude-subdir-list:,commit-introduction:,commit-suffix:,deploy-dir:,mailmap-file:,no-backups,version,help,reset
 
 # For downward compatibility
 OPTIONS_OBSOLETE=
@@ -236,6 +238,10 @@ while true; do
 		;;
 		--no-backups)
 		NO_BACKUPS="$TRUE"
+		shift
+		;;
+		--reset)
+		RESET="$TRUE"
 		shift
 		;;
 		--)
@@ -563,10 +569,19 @@ for SUBDIR in $REPOLIST; do
 		import re
 		import os
 
+		workdir = os.environ["WORKDIR"]
+
+		# Reset commit messages
+		if "'"$RESET"'" == "1":
+		    pattern = b"Origin commit data.*(\n.*)*"
+		    commit.message = re.sub(pattern, b"", commit.message, flags=re.DOTALL)
+		    with open(f"{workdir}/.rewrite", "w") as file:
+		        file.write("Commit messages have been reset.")
+		    return
+
 		# Check if the commit message already contains the tag "Origin commit data"
 		# Skip rewriting for this commit as it is already been processed
 		# Convert byte string to normal string for comparison
-		workdir = os.environ["WORKDIR"]
 		origin_tmp = commit.message.decode("utf-8")
 		if "Origin commit data" in origin_tmp:
 		    with open(f"{workdir}/.rewrite", "w") as file:
@@ -627,10 +642,14 @@ for SUBDIR in $REPOLIST; do
 		# read information from file
 		if [[ -f "$WORKDIR/.rewrite" ]]; then
 			read_data=$(< ${WORKDIR}/.rewrite)
-			if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
-				my_echo -e "\r[\e[33m!\e[0m] Warning! ${read_data}"
+			if [[ "$RESET" == "$FALSE" ]]; then
+				if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
+					my_echo -e "\r[\e[33m!\e[0m] Warning! ${read_data}"
+				fi
+				WARNINGS+=" - Rewriting: $read_data Commit message(s) kept untouched.\n"
+			else
+				my_echo -e "\r[\e[32m✓\e[0m] Reset: ${read_data}"
 			fi
-			WARNINGS+=" - Rewriting: $read_data Commit message(s) kept untouched.\n"
 			rm -f $WORKDIR/.rewrite
 		fi
 	fi
