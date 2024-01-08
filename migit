@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.8"
+VERSION="0.9"
 VERSION_STRING="$VERSION Copyright (C) 2023-2024 Thilo Graf, License: GPL2"
 
 EXEC_CALL="$0 $@"
