@@ -134,6 +134,11 @@ Zu beachten ist, dass Migit nur Eintragungen zurücksetzen kann, die von Migit v
  --reset
 ```
 
+* Legt einen oder mehrere Branches fest, die verarbeitet werden sollen. Standardmäßig werden alle Branches aus dem Quellrepository umgeschrieben. 
+```bash
+ --braanch-list=<'BRANCH1 BRANCH2 ...'>
+```
+
 
 ## Beispiele
 
