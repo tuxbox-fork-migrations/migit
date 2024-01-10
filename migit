@@ -548,9 +548,9 @@ for SUBDIR in $REPOLIST; do
 	fi
 
 	PATH_OPTION="--path $SUBDIR --target . --path-rename $SUBDIR/:"
-		if [[ "$SUBDIR" == "." ]]; then
-			PATH_OPTION=
-		fi
+	if [[ "$SUBDIR" == "." ]]; then
+		PATH_OPTION=
+	fi
 
 	MAILMAP_OPTION=""
 
