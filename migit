@@ -25,7 +25,7 @@ RESET="$FALSE"
 CUR_DIR=$(pwd)
 export WORKDIR=$CUR_DIR/work
 ORIGIN_REPO_NAME=".origin-tmp"
-GIT_TEMP_REPO="$WORKDIR/$ORIGIN_REPO_NAME"
+GIT_TEMP_REPO=""
 GIT_WORKING_COPY_DIR=$WORKDIR/origin
 DEPLOY_DIR="$CUR_DIR/deploy"
 MAILMAP_FILE="$CUR_DIR/.mailmap"
@@ -356,6 +356,10 @@ fi
 
 ## Create deploy directory
 mkdir -p $DEPLOY_DIR
+
+
+## Set temporarily origin clone dir
+GIT_TEMP_REPO="${WORKDIR}/${ORIGIN_REPO_NAME}_$(basename ${GIT_REPO_PATH})"
 
 ## Get the original repository, delete it if already exists, it must be fresh
 if [ -d $GIT_TEMP_REPO/.git ]; then
