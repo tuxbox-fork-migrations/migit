@@ -97,7 +97,7 @@ show_help() {
 	echo "      --reset                             Revert all rewritten commit messages to their original state, provided they are recognized as such."
 	echo
 	echo "  Commits:                                NOTE: These commit options correspond to those of git-filter-repo and are directly passed through to git-filter-repo:"
-	echo "	    --replace-refs {delete-no-add, delete-and-add, update-no-add, update-or-add, update-and-add}"
+	echo "      --replace-refs {delete-no-add, delete-and-add, update-no-add, update-or-add, update-and-add}"
 	echo "                                          Replace refs (see git-replace(1)) are used to rewrite parents (unless turned off by the usual git mechanism); this flag specifies what do do with those"
 	echo "                                          refs afterward. Replace refs can either be deleted or updated to point at new commit hashes. Also, new replace refs can be added for each commit"
 	echo "                                          rewrite. With 'update-or-add', new replace refs are only added for commit rewrites that aren't used to update an existing replace ref. default is"
@@ -605,14 +605,13 @@ for SUBDIR in $REPOLIST; do
 	GIT_FILTER_REPO_OPTS="--force  $MAILMAP_OPTION $PATH_OPTION --source $GIT_TEMP_REPO $COMMIT_OPTIONS"
 # 	 my_echo "$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS"
 # 	 exit 0
-echo $GIT_FILTER_REPO_OPTS
-exit 0
+
 	# Adjust commit messages, include origin data, and normalize author names with emails
 	if [[ "$MESSAGES_REWRITE" != "$TRUE" ]]; then
 		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS > /dev/null 2>&1 &
 		spinner_pid=$!
 		show_spinner ${spinner_pid} "Rewriting ${REPO_NAME}"
-		NOTES+="Commit messages not rewritten"
+		NOTES+=" - Commit messages not rewritten"
 	else
 		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS --commit-callback '
 		import datetime
