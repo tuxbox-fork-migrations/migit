@@ -1,212 +1,179 @@
-# Script zur Extraktion und Umschreibung von Git-Repositories
+# Script for extracting and rewriting Git repositories
 
-Das Hauptziel dieses Skripts war es, die Struktur von originalen Repositories wiederherzustellen, welche ursprünglich als Submodule betrieben wurden, aber von Forkbetreibern in monolithische Monster-Repositories umgewandelt wurden. Diese Art der Handhabung kann beim Zurückführen von Änderungen problematisch sein. Merges sind generell danach nicht mehr oder nur schwer möglich, da die Historie nach solchen Änderungen wahrscheinlich immer differieren wird. Zudem ist es oft umständlich und fehleranfällig, Änderungen mit Cherry-Picks von solchen Forks zurückzuführen.
+The main goal of this script was to restore the structure of original repositories, which were originally operated as submodules but were converted into monolithic monster repositories by fork operators. Such workflows make it virtually impossible to revert changes from such forks or can only be implemented with great difficulty via merge, rebase or cherry pick.
 
-Dieses Skript bietet die Möglichkeit, solche Repositories wieder zurück zuportierten und ähnlich wie bei der Anbindung als Tracking-Branches wie Remote-Repositories in lokale Submodul-Repositories bzw. normale Repositorioes einzubinden. Allerdings divergieren diese in der Regel. Daher funktionieren Merges normalerweise in der Regel generell nach wie vor nicht, zumindest nicht ohne gewissen Aufwand. Um die lokale Historie vor unnötigen Merge-Commits zu bewahren und die Historie linear zu halten, ist daher generell manuelles Cherry-Picking zu empfehlen.
+This script provides the ability to extract such repositories from subdirectories. The repositories created in this way can then be integrated into the original submodule repositories in a similar way to remote repositories. However, these usually diverge. Therefore, merges still generally don't work, at least not without some effort. In order to protect the local history from unnecessary merge commits and to keep the history linear, manual cherry picking is generally recommended.
 
-Da sich auch eine Automatisierung mit Hilfe von Migit anbietet, um Forks migriert zu spiegeln, kann man so auf die direkte Verwendung der eigentlichen Repositories verzichten und stattdessen nur die konvertierten Spiegel-Versionen nutzen.
+Since automation with the help of Migit is also possible to automatically mirror forks, you can forego using the actual repositories directly and instead only use the converted mirror versions.
 
-Migit setzt auf das Tool "git-filter-repo" auf, um beliebige Unterordner von einem monolithischen Repository zurück in das ursprüngliche Repository-Modell zu recyclen. Es können auch ganze Repositories umgewandelt werden.
-Commit-Messages werden so weit wie möglich mit gängigen Formatkonventionen umgeschrieben und, sofern diese abweichend sind, die ursprünglichen Inhalte der Commits ergänzend eingepflegt. Optional kann ein Verweis auf die Quellcommits aus den Fork-Repositories in die umgeschriebenen Commits eingefügt werden. Die migrierten Repositories werden dem Namen entsprechend in einem Deploy-Ordner und als Backup mit Zeitstempel als separate Repositories abgelegt. Beim Deploy-Vorgang wird zudem immer ein Symlink ohne Zeitstempel auf das zuletzt migrierte Projekt angelegt. Die so erzeugten Repositories können so beispielsweise automatisiert als Spiegel oder je nach Bedarf weiterverarbeitet werden. 
+Migit relies on the “git-filter-repo” tool to recycle any subfolders from a monolithic repository back into the original repository model. Entire repositories can also be rewritten.
+Commit messages are rewritten or supplemented as much as possible using common format conventions, commit IDs are adjusted and, if necessary, the original content of the commits is added. References to the source commits to the source repositories are inserted into the rewritten commits, which ensures better traceability, for example of cherry picks. The extracted repositories are stored according to their name in a deploy folder and as a backup with a timestamp as separate repositories. During the deployment process, a symlink without a timestamp is always created to the last extracted repository. The repositories created in this way can, for example, be processed automatically as mirrors or further processed as required.
 
-Ein Problem besteht allerdings unverändert darin, dass Forkbetreiber möglicherweise, um es sich vermeintlich einfach zu machen nur Merges auf die Original-Submodule verwendet haben. Dies wird möglicherweise sogar automatisiert oder scriptgestützt erledigt, oder die Repositories wurden irgendwann willkürlich von einem beliebigen Versionsstand initialisiert, ohne die Historie vollständig zu übernehmen. Dadurch sind über kurz oder lang keine Fastforward-Merges mehr möglich. Jeder nicht Fastforward-Merge erzeugt zudem einen Merge-Commit, was auf Dauer zwangsläufig zu einer komplexen Unordnung in den Forks geführt habe dürfte. Dazu kann sich noch schlampige Commitkultur gesellen und dagegen ist auch nicht wirklich ein Kraut gewachsen, so das sich diese Commits inhaltlich nur beschränkt optimieren lassen. Leider lässt sich diese Unordnung bei der Rückportierung, wenn überhaupt, nur teilweise beheben, aber zumindest chronologisch einordnen und einige gängige Formatkonventionen anwenden.
+However, one problem remains that fork operators may have only used merges on the original submodules to make things supposedly easy for themselves, which may even have been done automatically or with script support, or the repositories were arbitrarily initialized from an arbitrary version level at some point. In the long run, this inevitably creates a complex disorder in the history of the forks. In addition, there can be a sloppy commit culture and unfortunately there is no real cure for this, meaning that these commits can only be optimized to a limited extent in terms of content. Unfortunately, this backport mess can only be partially addressed, if at all, by removing empty or degenerate commits, at least organizing them chronologically, and applying some common formatting conventions.
 
 
-# Inhalt
+# Contents
 
-  * [Voraussetzungen](#voraussetzungen)
-  * [Verwendung](#verwendung)
-  * [Optionen](#optionen)
-  * [Beispiele](#beispiele)
+  * [Requirements](#requirements)
+  * [Usage](#Usage)
+  * [options](#options)
+  * [Examples](#examples)
 
-## Voraussetzungen
+## Requirements
 
-Das Skript erfordert das Tool git-filter-repo. Stelle sicher, dass es installiert ist. Siehe: https://github.com/newren/git-filter-repo#how-do-i-install-it
+The script requires the git-filter-repo tool. Make sure it is installed. See: https://github.com/newren/git-filter-repo#how-do-i-install-it
   * git >= 2.24.0
   * python3 >= 3.5
-  * wget
+  * due to
 
-## Verwendung
+## Use
 
-```bash
- ./migit -u <clone url> [OPTIONS]
+
+### ./migit -u <clone url> [OPTIONS]
  
-```
-Clone URL des Git-Repositories angeben, welches umgeschrieben werden soll.
-Wenn die URL das erste Argument ist, dann kann die Angabe des Flags '-u' weggelassen werden.
+Specify the clone URL of the Git repository to be rewritten.
+If the URL is the first argument, then specifying the '-u' flag can be omitted.
 ```bash
  ./migit <clone url> [OPTIONS]
+```
+The protocols supported are http, https, git and ssh. For local paths, don't use file://, just the relative path to the repository!
+
+
+## Options
+
+### -P, --prefix-source-url=<PREFIX> # from version 0.8
  
-```
-Als Protokolle werden http, https, git und ssh unterstützt. Für lokale Pfade, verwende nicht file://, sondern nur den relativen Pfad zum Repository! 
+URL prefix pattern for the source commit URL. This sets the link to the source commit to which the commit ID will be appended.
+The prefix URL is usually obtained automatically from the clone URL, with only accessibility being checked.
+If this fails, this will be displayed. In such a case, no source commits are entered into the rewritten commits and it is recommended to set the parameter in this case.
+A notice:
+--pattern-source-url=<PREFIX> is deprecated, but is still usable due to backwards compatibility!
 
-
-## Optionen
-
-```bash
- -P, --prefix-source-url=<PREFIX> # ab Version 0.8
- # --pattern-source-url=<PREFIX> ist veraltet, ist aber wegen der Abwärtskompatiblität weiterhin verwendbar!
-```
-Muster für URL-Präfix für die Quellcommit URL. Dies legt den Link zum Quellcommit fest, an den die Commit-ID angehängt wird.
-Die Prefix-URL wird normalerweise automatisch aus der Klon-URL gewonnen, wobei lediglich die Erreichbarkeit geprüft wird.
-Sollte dies fehlschlagen, wird dies angezeigt. In solch einem Fall, werden in die umgeschriebenen Commits auch keine Quellcommits eingetragen und es disem Fall empfehlenswert den Parameter zu setzen.
-
-Beispiel: Ein Link zu einem Commit bei GitHub setzt sich generell aus der Basisadresse zum jeweiligen Projekt und dem Commit-Hash zusammen.
+Example: A link to a commit on GitHub generally consists of the base address of the respective project and the commit hash.
 ```bash
  https://github.com/tuxbox-fork-migrations/migit/commit/942564882104d6de56eb817e6c5bbc3d4e66a5a3
 ```
-
-Der Parameter sollte dann entsprechend so angegeben werden:
+The parameter should then be specified as follows:
 ```bash
  -P https://github.com/tuxbox-fork-migrations/migit/commit
 ```
-
-Zu beachten wäre noch, dass die Extraktion der Basisadresse aus lokalen Repositorys oder URL's für ssh- bzw. git-Protolle in der Regel nicht funktioniert. Wenn ein Quell-Commit Link gwünscht ist,
-muss der Parameter explizit immer gesetzt werden, um sicherzustellen, dass die Basisadresse korrekt eingebaut wird. Andernfalls wird die Zeile für den Link nicht eingetragen.
-
-
-```bash
- -T, --target-root-project-name=<NAME>
-```
-Name des Zielordners innerhalb des Deploy-Ordners. Standard: Name des geklonten Projekts und Zeitstempel der Umschreibung. Der Projektname wird standardmäßig aus der Clone-URL generiert.
+A notice:
+It should also be noted that extracting the base address from local repositories or URLs does not work for ssh or git protocols. If a source commit link is desired,
+The parameter must therefore always be set explicitly to ensure that the base address is installed correctly. Otherwise the line for the link will not be entered.
 
 
-```bash
- -p, --project-name-prefix=<PREFIX>
-```
-Prefix des Zielordners das dem extrahierten Repository-Namen vorangestellt wird.
+### -T, --target-root-project-name=<NAME>
+Name of the target folder within the deploy folder.
+Default: Name of the cloned project and timestamp of the rewrite. By default, the project name is generated from the clone URL.
 
 
-```bash    
- -s, --project-name-suffix=<SUFFIX>
-```
-Suffix des Zielordners das dem extrahierten Repository-Namen angehängt wird.
+### -p, --project-name-prefix=<PREFIX>
+Prefix of the target folder that precedes the extracted repository name.
+
+   
+### -s, --project-name-suffix=<SUFFIX>
+Destination folder suffix appended to the extracted repository name.
 
 
-```bash
- -S, --subdir
-```
-Unterverzeichnis das umgeschrieben werden soll.
-Soll ein Repository komplett umgeschrieben werden, kann dieser Parameter einfach weggelassen werden oder einfach nur einen Punkt angeben:
+### -S, --subdir
+Subdirectory to be extracted.
+If a repository is to be completely rewritten, this parameter can simply be omitted or just specify one point:
 ```bash
  --subdir .
-#oder
-  -S .
-```
-Liste von Unterverzeichnissen, die umgeschrieben werden sollen. Verzeichnisliste muss mit Apostrophen 'sub1 sub2 ...' umgeben sein.                       
-Leerzeichen sind Trennzeichen (Standard: Alle Unterverzeichnisse der ersten Ebene innerhalb des Stammverzeichnisses)
-```bash                                        
- --subdir-list='<LIST>'
+#or
+  -S.
 ```
 
+### --subdir-list='<LIST>'
+List of subdirectories to be rewritten. Directory listing must be surrounded by apostrophes 'sub1 sub2...'.
+Spaces are separators.
+Default: All first-level subdirectories within the root directory.
 
-```bash                                       
- --exclude-subdir-list='<LIST>'
-```            
-Liste von Unterverzeichnissen, die nicht extrahiert werden sollen. Liste muss mit Apostrophen 'subx suby ...' umgeben sein. Leerzeichen als Trennzeichen.
-Die Option --subdir darf hier nicht gesetzt sein! 
+                                      
+### --exclude-subdir-list='<LIST>'
+List of subdirectories not to be extracted. List must be surrounded by apostrophes 'subx suby...'. Space as a separator.
+The --subdir option must not be set here!
 
 
-```bash
- --commit-introduction=<PATTERN>
+### --commit-introduction=<PATTERN>
+Pattern commit introductions on the first line of each rewritten commit. Default: the respective subdirectory name or the original repo name.
+This makes particular sense if subdirectories are extracted and a uniform introduction to the commit message is generally desired.
+
+
+### --commit-suffix=<SUFFIX>
+Adds a signature (in the sense of a suffix) to the end of each modified commit message.
+
+
+### -d, --deploy-dir=<DIR>
+Target directory (deploy folder) in which the rewritten repositories are stored. Default: ./deploy
+
+
+### -q
+Suppresses the progress display. This makes sense if the script is to be executed automatically, e.g. in cron jobs. In this mode, the script also returns EXIT_STAUTS 0 in the event of errors,
+so that the script does not abort possible automated tasks in which it is embedded, more complex processes. Only status logs containing information about the call and error messages are output. These outputs can be further used for logging.
+
+
+### --id-rsa-file=<PATH>
+Relative path to the private ssh key file
+
+
+### --reset
+Resets all rewritten commit messages. This means that the entries that Migit entered in the commits will be removed again. Email and author descriptions remain unaffected.
+It should be noted that Migit can only reset entries that were made by Migit itself. Everything that was entered in the commit messages under “Origin commit data” is therefore removed.
+
+
+### --branch-list=<'BRANCH1 BRANCH2 ...'>
+Specifies one or more branches to be processed. By default, all branches from the source repository are rewritten.
+
+
+### --replace-refs {delete-no-add, delete-and-add, update-no-add, update-or-add, update-and-add}
+These options determine how replacement refs are handled after commits are edited:
 ```
-Muster für Commit Einleitungen in der ersten Zeile jedes umgeschriebenen Commits. Standard: der jeweilige Unterverzeichnisname bzw. der Original-Reponame.
-Dies macht vorallem Sinn wenn Unterverzeichnisse extrahiert werden und generell eine einheitliche Einleitung der Commit-Nachricht gewünscht ist.
-
-
-```bash
- --commit-suffix=<SUFFIX>
+delete-no-add: All existing replacement references will be deleted and no new ones will be added.
+delete-and-add: Existing replacement references are deleted, but new ones are added for each commit rewrite.
+update-no-add: Existing replacement references are updated to point to the new commit hashes, but no new ones are added.
+update-or-add: New replacement references are added only for those commits that are not used to update an existing replacement reference. Existing ones are updated.
+update-and-add: Existing replacement references are updated and new replacement references are added for each commit rewrite.
 ```
-Fügt eine Signatur (im Sinne eines Suffix') an das Ende jeder modifizierten Commit Message an.
+By default, update-and-add is used if $GIT_DIR/filter-repo/already_ran does not exist, otherwise update-or-add.
+By default, this option, even if it is set to visible, usually ensures that references that point to other commits via their commit ID, for example in commit messages, are adjusted accordingly so that they do not point.
+As an example, there might be a commit that is a revert of another commit. When reverting, Git usually always includes the commit ID of the reverted commit in the commit message.
+This would also be adjusted so that the reference continues to point to the appropriate commit.
+Already broken references, such as those created when cherry-picking commits that contain a commit ID, cannot be restored.
 
 
-```bash
- -d, --deploy-dir=<DIR>
+### --prune-empty {always, auto, never}
+
+This option controls whether and how empty commits are removed:
 ```
-Zielverzeichnis (Deploy-Ordner) in das die umgeschriebenen Repositories abgelegt werden. Standard: ./deploy
-
-
-```bash
- -q
+always: Always removes all empty commits.
+auto (default): Only removes commits that become empty as a result of the rewrite (not those that were already empty in the original repo unless their parent commit was removed).
+never: Never removes empty commits.
 ```
-Unterdrückt die Fortschrittsanzeige. Dies ist sinnvoll, wenn das Script automatisiert ausgeführt werden soll, z.B. in Cron-Jobs. Das Skript gibt außerdem in diesem Modus bei Fehlern den EXIT_STAUTS 0 zurück,
-damit das Skript mögliche automatisierte Aufgaben in dem es eingebettet ist, komplexere Vorgänge nicht abbricht. Es werden lediglich nur Statusprotokolle ausgegeben, die Angaben zum Aufruf und Fehlermeldungen enthalten. Diese Ausgaben können zur Protollierung weiter verwendet werden.
+When a commit's parent commit is removed, the first unremoved ancestor becomes the new parent commit.
 
 
-```bash
- --id-rsa-file=<PATH>
+### --prune-degenerate {always, auto, never}
+This option specifically handles merge commits that might be "degenerated" by removing other commits:
 ```
-Relativer Pfad zur Privaten ssh Keydatei
-
-
-```bash
- --reset
+always: Removes all degenerate merge commits.
+auto (default): Only removes merge commits that were degenerated by editing (not those that were already degenerated originally).
+never: Does not remove degenerate merge commits.
 ```
-Setzt alle umgeschriebenen Commit-Messages wieder zurück. Das bedeutet, dass die Einträge, welche Migit in die Commits eingetragen hat, wieder entfernt werden. E-Mail- und Autoren-Umschreibungen bleiben unberührt.
-Zu beachten ist, dass Migit nur Eintragungen zurücksetzen kann, die von Migit selbst vorgenommen wurden. Es wird daher alles entfernt, was innerhalb der Commit-Messages unter "Origin commit data" eingetragen wurde. 
+A merge commit is considered degenerate if it has fewer than two parents, a commit takes on both parent roles, or one parent is an ancestor of the other.
 
 
-```bash
- --braanch-list=<'BRANCH1 BRANCH2 ...'>
-```
-Legt einen oder mehrere Branches fest, die verarbeitet werden sollen. Standardmäßig werden alle Branches aus dem Quellrepository umgeschrieben.
+### --no-ff
+This option affects the behavior of --prune-degenerate and is useful in projects that always use --no-ff (no fast-forward) merge commits. It prevents removal of the first parent commit even if it becomes an ancestor of another parent.
 
 
-```bash
- --replace-refs {delete-no-add, delete-and-add, update-no-add, update-or-add, update-and-add}
-```
-Diese Optionen bestimmen, wie mit Ersatz-Referenzen (replace refs) nach der Bearbeitung von Commits umgegangen wird:
-```
-    delete-no-add: 	Alle bestehenden Ersatz-Referenzen werden gelöscht, und es werden keine neuen hinzugefügt.
-    delete-and-add: 	Bestehende Ersatz-Referenzen werden gelöscht, aber für jede Commit-Neuschreibung werden neue hinzugefügt.
-    update-no-add: 	Bestehende Ersatz-Referenzen werden aktualisiert, um auf die neuen Commit-Hashes zu zeigen, aber es werden keine neuen hinzugefügt.
-    update-or-add: 	Neue Ersatz-Referenzen werden nur für die Commits hinzugefügt, die nicht zur Aktualisierung einer bestehenden Ersatz-Referenz verwendet werden. Bestehende werden aktualisiert.
-    update-and-add: 	Bestehende Ersatz-Referenzen werden aktualisiert, und es werden neue Ersatz-Referenzen für jede Commit-Neuschreibung hinzugefügt.
-```
-Standardmäßig wird update-and-add verwendet, wenn $GIT_DIR/filter-repo/already_ran nicht existiert, sonst update-or-add.
-Diese Option sorgt standardmäßig, auch wenn sie sicht gesetzt ist, normalerweise dafür, dass Referenzen die z.B. in Commit-Nachrichten auf andere Commits über Ihre Commit-ID verweisen, entsprechend angepasst werden, so dass diese nicht verweisen.
-Als Beispiel könnte ein Commit existieren, der ein Revert eines anderen Commits ist. Git trägt bei einem Revert normalerweise immer die Commit-ID des zurückgenommenen Commits in die Commit-Nachricht ein.
-Diese würde also ebenso angepasst werden, so dass der Verweis weiterhin auf den passenden Commit zeigt.
-Bereits kaputte Referenzen, wie sie z.B, entstehen wenn Cherry-Picks von Commits gemacht wurden, die eine Commit-ID enthalten, können nicht wieder hergestellt werden.
+## Examples
 
-
-```bash
- --prune-empty {always, auto, never}
-```
-Diese Option steuert, ob und wie leere Commits entfernt werden:
-```
-	always: 		Entfernt immer alle leeren Commits.
-	auto (Standard): 	Entfernt nur Commits, die durch die Neuschreibung leer werden (nicht solche, die im Original-Repo bereits leer waren, es sei denn, ihr Eltern-Commit wurde entfernt).
-	never: 			Entfernt niemals leere Commits.
-```
-Wenn der Eltern-Commit eines Commits entfernt wird, wird der erste nicht entfernte Vorfahre zum neuen Eltern-Commit.
-
-
-```bash
- --prune-degenerate {always, auto, never}
-```
-Diese Option behandelt speziell Merge-Commits, die durch das Entfernen anderer Commits "entartet" sein könnten:
-
-	always: 		Entfernt alle entarteten Merge-Commits.
-	auto (Standard): 	Entfernt nur Merge-Commits, die durch die Bearbeitung entartet sind (nicht solche, die schon ursprünglich entartet waren).
-	never: 			Entfernt keine entarteten Merge-Commits.
-
-Ein Merge-Commit gilt als entartet, wenn er weniger als zwei Eltern hat, ein Commit beide Elternrollen einnimmt, oder ein Elternteil Vorfahre des anderen ist.
-
-
-```bash
- --no-ff
-```
-Diese Option beeinflusst das Verhalten von --prune-degenerate und ist nützlich in Projekten, die immer Merge-Commits mit --no-ff (no fast-forward) verwenden. Sie verhindert das Entfernen des ersten Eltern-Commits, selbst wenn er ein Vorfahre eines anderen Elternteils wird.
-
-
-## Beispiele
-
-### Alle Unterverzeichnisse eines Repositories extrahieren
+### Extract all subdirectories of a repository
 ```bash
 ./migit -u https://github.com/example/repository.git
 ```
-Commits werden generell so umgeschrieben:
+Commits are generally rewritten like this:
 ```bash
 subdir1: this is a commit message
     
@@ -217,16 +184,16 @@ subdir1: this is a commit message
     Author: john doe <jd@gmx.de>
     Date: 2020-06-02 (Tue, 02 Jun 2020)
     
-    Origin message was:
+    Origin message what:
     ------------------
     - this is a commit message
 ```
 
-### Bestimmtes Unterverzeichnis eines Repositories extrahieren mit Angabe des Quellcommits
+### Extract specific subdirectory of a repository specifying the source commit
 ```bash
-./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1 --commit-suffix='Automatically migrated by Migit'
+./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1 --commit-suffix=' Automatically migrated by Migit'
 ```
-Commits werden so umgeschrieben:
+Commits are rewritten like this:
 ```bash
     subdir1: small fixes for something
     
@@ -238,7 +205,7 @@ Commits werden so umgeschrieben:
     Author: john doe <jd@gmx.de>
     Date: 2023-06-10 (Sat, 10 Jun 2023)
     
-    Origin message was:
+    Origin message what:
     ------------------
     - small fixes for something
     
@@ -247,23 +214,22 @@ Commits werden so umgeschrieben:
 
 ```
 
-### Mehrere Unterverzeichnisse eines Repositories extrahieren mit Angabe des Quellcommits
+### Extract multiple subdirectories of a repository specifying the source commit
 ```bash
 ./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir-list='subdir1 subdir2'
 ```
-Commits werden wie im vorherigen Beispiel umgeschrieben jedoch diesmal für bestimmte Unterverzeichnisse.
+Commits are rewritten as in the previous example, but this time for specific subdirectories.
 
 
-### Unterverzeichnisse eines Repositories extrahieren, aber bestimmte Unterverzeichnisse ausschließen, mit Angabe des Quellcommits
+### Extract subdirectories of a repository, but exclude certain subdirectories, specifying the source commit
 ```bash
-./migit-u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --exclude-subdir-list='subdir1 subdir2'
+./migit-u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --exclude-subdir-list='subdir1 subdir2 '
 ```
-Commits werden wie im vorherigen Beispiel umgeschrieben jedoch werden alle Unterverzeichnisse außer subdir1 und subdir2 extrahiert.
+Commits are rewritten as in the previous example but all subdirectories except subdir1 and subdir2 are extracted.
 
 
-### Unterverzeichnisse aus tieferen Ebenen eines Repositories extrahieren, mit Angabe des Quellcommits
+### Extract subdirectories from deeper levels of a repository, specifying the source commit
 ```bash
 ./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1/nextdir/tool
 ```
-Commits werden wie im vorherigen Beispiel umgeschrieben jedoch wird das Unterverzeichnisse 'tool' extrahiert.
- 
+Commits are rewritten as in the previous example but the subdirectory 'tool' is extracted.
