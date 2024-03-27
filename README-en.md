@@ -9,7 +9,7 @@ Since automation with the help of Migit is also possible to automatically mirror
 Migit relies on the “git-filter-repo” tool to recycle any subfolders from a monolithic repository back into the original repository model. Entire repositories can also be rewritten.
 Commit messages are rewritten or supplemented as much as possible using common format conventions, commit IDs are adjusted and, if necessary, the original content of the commits is added. References to the source commits to the source repositories are inserted into the rewritten commits, which ensures better traceability, for example of cherry picks. The extracted repositories are stored according to their name in a deploy folder and as a backup with a timestamp as separate repositories. During the deployment process, a symlink without a timestamp is always created to the last extracted repository. The repositories created in this way can, for example, be processed automatically as mirrors or further processed as required.
 
-However, one problem remains that fork operators may have only used merges on the original submodules to make things supposedly easy for themselves, which may even have been done automatically or with script support, or the repositories were arbitrarily initialized from an arbitrary version level at some point. In the long run, this inevitably creates a complex disorder in the history of the forks. In addition, there can be a sloppy commit culture and unfortunately there is no real cure for this, meaning that these commits can only be optimized to a limited extent in terms of content. Unfortunately, this backport mess can only be partially addressed, if at all, by removing empty or degenerate commits, at least organizing them chronologically, and applying some common formatting conventions.
+However, one problem remains that fork operators may have only used merges on the original submodules to make things supposedly easy for themselves, which may even have been done automatically or using scripts, or the repositories were arbitrarily initialized from an arbitrary version level at some point. In the long run, this inevitably creates a complex disorder in the history of the forks. In addition, there can be a sloppy commit culture and unfortunately there is no real cure for this, meaning that these commits can only be optimized to a limited extent in terms of content. Unfortunately, this backport mess can only be partially addressed, if at all, by removing empty or degenerate commits, at least organizing them chronologically, and applying some common formatting conventions.
 
 
 # Contents
@@ -97,7 +97,7 @@ The --subdir option must not be set here!
 
 ### --commit-introduction=<PATTERN>
 Pattern commit introductions on the first line of each rewritten commit. Default: the respective subdirectory name or the original repo name.
-This makes particular sense if subdirectories are extracted and a uniform introduction to the commit message is generally desired.
+This especially makes sense if subdirectories are extracted and a uniform introduction to the commit message is generally desired.
 
 
 ### --commit-suffix=<SUFFIX>
