@@ -11,7 +11,7 @@ def translate_readme(input_text, target_lang):
     # add hint for automatically translation
     translated_text = f"Note: This is an automatically translated file. Original content from [here](https://github.com/tuxbox-fork-migrations/migit/blob/master/README-de.md):\n\n{translated_text}"
 
-    return translated.text
+    return translated_text
 
 if __name__ == "__main__":
     input_text = open("README-de.md", "r").read()
