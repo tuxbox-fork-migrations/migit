@@ -1,4 +1,6 @@
 deploy
 work
+*.orig
 .directory
 *.*-swp
+.gitignore*
