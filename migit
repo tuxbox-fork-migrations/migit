@@ -1,5 +1,5 @@
 #!/bin/bash
-
+MIGIT_NAME="$(basename "$0")"
 VERSION="0.9"
 VERSION_STRING="$VERSION Copyright (C) 2023-2024 Thilo Graf, License: GPL2"
 
@@ -55,7 +55,7 @@ GIT_ORIGIN_COMMIT_URL_BASE=
 show_help() {
 	echo
 	echo " ------------------------------------------------------------------"
-	echo " $(basename "$0")"
+	echo " $MIGIT_NAME"
 	echo " Version: $VERSION_STRING"
 	echo
 	echo " Script tool for extracting subdirectories into individual"
@@ -119,7 +119,7 @@ show_help() {
 	echo "      --id-rsa-file=<PATH>                Path to your privat key file e.g. ~/.ssh/id_rsa"
 	echo
 	echo "  Global:"
-	echo "  -v, --version                           Show $(basename "$0") version"
+	echo "  -v, --version                           Show $MIGIT_NAME version"
 	echo "  -h, --help                              Show this help"
 	echo "  -q                                      Don't show progress"
 }
