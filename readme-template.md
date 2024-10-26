@@ -128,13 +128,13 @@ Legt einen oder mehrere Branches fest, die verarbeitet werden sollen. Standardm�
 
 ### --replace-refs {delete-no-add, delete-and-add, update-no-add, update-or-add, update-and-add}
 Diese Optionen bestimmen, wie mit Ersatz-Referenzen (replace refs) nach der Bearbeitung von Commits umgegangen wird:
-```
-delete-no-add: 	Alle bestehenden Ersatz-Referenzen werden gelöscht, und es werden keine neuen hinzugefügt.
-delete-and-add: Bestehende Ersatz-Referenzen werden gelöscht, aber für jede Commit-Neuschreibung werden neue hinzugefügt.
-update-no-add: 	Bestehende Ersatz-Referenzen werden aktualisiert, um auf die neuen Commit-Hashes zu zeigen, aber es werden keine neuen hinzugefügt.
-update-or-add: 	Neue Ersatz-Referenzen werden nur für die Commits hinzugefügt, die nicht zur Aktualisierung einer bestehenden Ersatz-Referenz verwendet werden. Bestehende werden aktualisiert.
-update-and-add: Bestehende Ersatz-Referenzen werden aktualisiert, und es werden neue Ersatz-Referenzen für jede Commit-Neuschreibung hinzugefügt.
-```
+
+`delete-no-add`: 	Alle bestehenden Ersatz-Referenzen werden gelöscht, und es werden keine neuen hinzugefügt.
+`delete-and-add`: Bestehende Ersatz-Referenzen werden gelöscht, aber für jede Commit-Neuschreibung werden neue hinzugefügt.
+`update-no-add`: 	Bestehende Ersatz-Referenzen werden aktualisiert, um auf die neuen Commit-Hashes zu zeigen, aber es werden keine neuen hinzugefügt.
+`update-or-add`: 	Neue Ersatz-Referenzen werden nur für die Commits hinzugefügt, die nicht zur Aktualisierung einer bestehenden Ersatz-Referenz verwendet werden. Bestehende werden aktualisiert.
+`update-and-add`: Bestehende Ersatz-Referenzen werden aktualisiert, und es werden neue Ersatz-Referenzen für jede Commit-Neuschreibung hinzugefügt.
+
 Standardmäßig wird update-and-add verwendet, wenn $GIT_DIR/filter-repo/already_ran nicht existiert, sonst update-or-add.
 Diese Option sorgt standardmäßig, auch wenn sie sicht gesetzt ist, normalerweise dafür, dass Referenzen die z.B. in Commit-Nachrichten auf andere Commits über Ihre Commit-ID verweisen, entsprechend angepasst werden, so dass diese nicht verweisen.
 Als Beispiel könnte ein Commit existieren, der ein Revert eines anderen Commits ist. Git trägt bei einem Revert normalerweise immer die Commit-ID des zurückgenommenen Commits in die Commit-Nachricht ein.
@@ -145,21 +145,25 @@ Bereits kaputte Referenzen, wie sie z.B, entstehen wenn Cherry-Picks von Commits
 ### --prune-empty {always, auto, never}
 
 Diese Option steuert, ob und wie leere Commits entfernt werden:
-```
-always: 	 Entfernt immer alle leeren Commits.
-auto (Standard): Entfernt nur Commits, die durch die Neuschreibung leer werden (nicht solche, die im Original-Repo bereits leer waren, es sei denn, ihr Eltern-Commit wurde entfernt).
-never: 		 Entfernt niemals leere Commits.
-```
+
+`always`:  Entfernt immer alle leeren Commits.
+
+`auto`:    (Standard): Entfernt nur Commits, die durch die Neuschreibung leer werden (nicht solche, die im Original-Repo bereits leer waren, es sei denn, ihr Eltern-Commit wurde entfernt).
+
+`ever`: 	 Entfernt niemals leere Commits.
+
 Wenn der Eltern-Commit eines Commits entfernt wird, wird der erste nicht entfernte Vorfahre zum neuen Eltern-Commit.
 
 
 ### --prune-degenerate {always, auto, never}
 Diese Option behandelt speziell Merge-Commits, die durch das Entfernen anderer Commits "entartet" sein könnten:
-```
-always: 	 Entfernt alle entarteten Merge-Commits.
-auto (Standard): Entfernt nur Merge-Commits, die durch die Bearbeitung entartet sind (nicht solche, die schon ursprünglich entartet waren).
-never: 		 Entfernt keine entarteten Merge-Commits.
-```
+
+`always`: 	 Entfernt alle entarteten Merge-Commits.
+
+`auto` :     (Standard): Entfernt nur Merge-Commits, die durch die Bearbeitung entartet sind (nicht solche, die schon ursprünglich entartet waren).
+
+`never`: 		 Entfernt keine entarteten Merge-Commits.
+
 Ein Merge-Commit gilt als entartet, wenn er weniger als zwei Eltern hat, ein Commit beide Elternrollen einnimmt, oder ein Elternteil Vorfahre des anderen ist.
 
 
