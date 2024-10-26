@@ -132,13 +132,13 @@ Specifica uno o più rami da elaborare. Per impostazione predefinita, tutti i ra
 
 ### --replace-refs {elimina-non-aggiungi, elimina-e-aggiungi, aggiorna-no-aggiungi, aggiorna-o-aggiungi, aggiorna-e-aggiungi}
 Queste opzioni determinano come vengono gestiti i riferimenti sostitutivi dopo la modifica dei commit:
-```
-delete-no-add: 	Alle bestehenden Ersatz-Referenzen werden gelöscht, und es werden keine neuen hinzugefügt.
-delete-and-add: Bestehende Ersatz-Referenzen werden gelöscht, aber für jede Commit-Neuschreibung werden neue hinzugefügt.
-update-no-add: 	Bestehende Ersatz-Referenzen werden aktualisiert, um auf die neuen Commit-Hashes zu zeigen, aber es werden keine neuen hinzugefügt.
-update-or-add: 	Neue Ersatz-Referenzen werden nur für die Commits hinzugefügt, die nicht zur Aktualisierung einer bestehenden Ersatz-Referenz verwendet werden. Bestehende werden aktualisiert.
-update-and-add: Bestehende Ersatz-Referenzen werden aktualisiert, und es werden neue Ersatz-Referenzen für jede Commit-Neuschreibung hinzugefügt.
-```
+
+`delete-no-add`: tutti i riferimenti sostitutivi esistenti verranno eliminati e non ne verranno aggiunti di nuovi.
+`delete-and-add`: i riferimenti di sostituzione esistenti vengono eliminati, ma ne vengono aggiunti di nuovi per ogni riscrittura del commit.
+`update-no-add`: i riferimenti sostitutivi esistenti verranno aggiornati per puntare ai nuovi hash di commit, ma non ne verranno aggiunti di nuovi.
+`update-or-add`: i nuovi riferimenti sostitutivi vengono aggiunti solo per quei commit che non vengono utilizzati per aggiornare un riferimento sostitutivo esistente. Quelli esistenti vengono aggiornati.
+`update-and-add`: i riferimenti di sostituzione esistenti vengono aggiornati e vengono aggiunti nuovi riferimenti di sostituzione per ogni riscrittura del commit.
+
 Per impostazione predefinita, viene utilizzato update-and-add se $GIT_DIR/filter-repo/already_ran non esiste, altrimenti update-or-add.
 Per impostazione predefinita, questa opzione, anche se è impostata su visibile, in genere garantisce che i riferimenti che puntano ad altri commit tramite il loro ID commit, ad esempio nei messaggi di commit, vengano modificati di conseguenza in modo che non puntino.
 Ad esempio, potrebbe esserci un commit che rappresenta il ripristino di un altro commit. Durante il ripristino, Git solitamente include sempre l'ID di commit del commit ripristinato nel messaggio di commit.
@@ -149,21 +149,25 @@ I riferimenti già interrotti, come quelli creati durante la selezione dei commi
 ### --prune-empty {sempre, automatico, mai}
 
 Questa opzione controlla se e come vengono rimossi i commit vuoti:
-```
-always: 	 Entfernt immer alle leeren Commits.
-auto (Standard): Entfernt nur Commits, die durch die Neuschreibung leer werden (nicht solche, die im Original-Repo bereits leer waren, es sei denn, ihr Eltern-Commit wurde entfernt).
-never: 		 Entfernt niemals leere Commits.
-```
-Quando il commit principale di un commit viene rimosso, il primo antenato non rimosso diventa il nuovo commit principale.
+
+`always`: rimuove sempre tutti i commit vuoti.
+
+`auto`: (impostazione predefinita): rimuove solo i commit che diventano vuoti a seguito della riscrittura (non quelli che erano già vuoti nel repository originale a meno che il commit principale non sia stato rimosso).
+
+`ever`: non rimuove mai i commit vuoti.
+
+Quando il genitore di un commit viene rimosso, il primo antenato non rimosso diventa il nuovo commit genitore.
 
 
 ### --prune-degenerate {sempre, automatico, mai}
 Questa opzione gestisce specificamente i commit di unione che potrebbero essere "degenerati" rimuovendo altri commit:
-```
-always: 	 Entfernt alle entarteten Merge-Commits.
-auto (Standard): Entfernt nur Merge-Commits, die durch die Bearbeitung entartet sind (nicht solche, die schon ursprünglich entartet waren).
-never: 		 Entfernt keine entarteten Merge-Commits.
-```
+
+`always`: rimuove tutti i commit di unione degenerati.
+
+`auto` : (Predefinito): rimuove solo i commit di unione che sono stati degenerati dalla modifica (non quelli che erano già degenerati originariamente).
+
+`never`: non rimuove i commit di unione degenerati.
+
 Un commit di unione è considerato degenerato se ha meno di due genitori, un commit assume entrambi i ruoli di genitore o un genitore è un antenato dell'altro.
 
 

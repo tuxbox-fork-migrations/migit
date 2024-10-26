@@ -4,7 +4,7 @@
 
 # Script pour extraire et réécrire les référentiels Git
 
-L'objectif principal de ce script était de restaurer la structure des référentiels d'origine, qui étaient à l'origine exploités comme des sous-modules mais ont été convertis en référentiels monstres monolithiques par les opérateurs de fork. De tels flux de travail rendent pratiquement impossible l'annulation des modifications de ces forks ou ne peuvent être mis en œuvre que très difficilement via une fusion, un rebase ou un choix privilégié.
+L'objectif principal de ce script était de restaurer la structure des référentiels d'origine, qui étaient à l'origine exploités comme des sous-modules mais ont été convertis en référentiels monstres monolithiques par les opérateurs de fork. De tels flux de travail rendent pratiquement impossible l'annulation des modifications de ces forks ou ne peuvent être mis en œuvre que très difficilement via une fusion, un rebase ou un choix cerise.
 
 Ce script offre la possibilité d'extraire ces référentiels à partir de sous-répertoires. Les référentiels ainsi créés peuvent ensuite être intégrés dans les référentiels du sous-module d'origine de la même manière que les référentiels distants. Cependant, ceux-ci divergent généralement. Par conséquent, les fusions ne fonctionnent toujours pas, du moins pas sans effort. Afin de protéger l’historique local des validations de fusion inutiles et de maintenir l’historique linéaire, une sélection manuelle est généralement recommandée.
 
@@ -105,7 +105,7 @@ Cela est particulièrement logique si des sous-répertoires sont extraits et qu'
 
 
 ### --commit-suffix=<SUFFIXE>
-Ajoute une signature (au sens de suffixe) à la fin de chaque message de validation modifié.
+Ajoute une signature (au sens d'un suffixe) à la fin de chaque message de validation modifié.
 
 
 ### -d, --deploy-dir=<REP>
@@ -132,13 +132,13 @@ Spécifie une ou plusieurs branches à traiter. Par défaut, toutes les branches
 
 ### --replace-refs {delete-no-add, delete-and-add, update-no-add, update-or-add, update-and-add}
 Ces options déterminent la manière dont les références de remplacement sont gérées une fois les validations modifiées :
-```
-delete-no-add: 	Alle bestehenden Ersatz-Referenzen werden gelöscht, und es werden keine neuen hinzugefügt.
-delete-and-add: Bestehende Ersatz-Referenzen werden gelöscht, aber für jede Commit-Neuschreibung werden neue hinzugefügt.
-update-no-add: 	Bestehende Ersatz-Referenzen werden aktualisiert, um auf die neuen Commit-Hashes zu zeigen, aber es werden keine neuen hinzugefügt.
-update-or-add: 	Neue Ersatz-Referenzen werden nur für die Commits hinzugefügt, die nicht zur Aktualisierung einer bestehenden Ersatz-Referenz verwendet werden. Bestehende werden aktualisiert.
-update-and-add: Bestehende Ersatz-Referenzen werden aktualisiert, und es werden neue Ersatz-Referenzen für jede Commit-Neuschreibung hinzugefügt.
-```
+
+`delete-no-add` : Toutes les références de remplacement existantes seront supprimées et aucune nouvelle ne sera ajoutée.
+`delete-and-add` : les références de remplacement existantes sont supprimées, mais de nouvelles sont ajoutées pour chaque réécriture de validation.
+`update-no-add` : les références de remplacement existantes seront mises à jour pour pointer vers les nouveaux hachages de validation, mais aucun nouveau ne sera ajouté.
+`update-or-add` : les nouvelles références de remplacement sont ajoutées uniquement pour les validations qui ne sont pas utilisées pour mettre à jour une référence de remplacement existante. Les existants sont mis à jour.
+`update-and-add` : les références de remplacement existantes sont mises à jour et de nouvelles références de remplacement sont ajoutées pour chaque réécriture de validation.
+
 Par défaut, update-and-add est utilisé si $GIT_DIR/filter-repo/already_ran n'existe pas, sinon update-or-add.
 Par défaut, cette option, même si elle est définie sur visible, garantit généralement que les références qui pointent vers d'autres commits via leur ID de commit, par exemple dans les messages de commit, sont ajustées en conséquence afin qu'elles ne pointent pas.
 À titre d'exemple, il peut y avoir une validation qui est l'annulation d'une autre validation. Lors de l'annulation, Git inclut généralement toujours l'ID de validation de la validation annulée dans le message de validation.
@@ -149,21 +149,25 @@ Les références déjà rompues, telles que celles créées lors de la sélectio
 ### --prune-empty {toujours, auto, jamais}
 
 Cette option contrôle si et comment les commits vides sont supprimés :
-```
-always: 	 Entfernt immer alle leeren Commits.
-auto (Standard): Entfernt nur Commits, die durch die Neuschreibung leer werden (nicht solche, die im Original-Repo bereits leer waren, es sei denn, ihr Eltern-Commit wurde entfernt).
-never: 		 Entfernt niemals leere Commits.
-```
-Lorsque la validation parent d’une validation est supprimée, le premier ancêtre non supprimé devient la nouvelle validation parent.
+
+`always` : supprime toujours tous les commits vides.
+
+`auto` : (par défaut) : supprime uniquement les commits qui deviennent vides à la suite de la réécriture (pas ceux qui étaient déjà vides dans le dépôt d'origine, sauf si leur commit parent a été supprimé).
+
+`ever` : ne supprime jamais les commits vides.
+
+Lorsque le parent d'un commit est supprimé, le premier ancêtre non supprimé devient le nouveau commit parent.
 
 
 ### --prune-degenerate {toujours, auto, jamais}
 Cette option gère spécifiquement les commits de fusion qui pourraient être « dégénérés » en supprimant d'autres commits :
-```
-always: 	 Entfernt alle entarteten Merge-Commits.
-auto (Standard): Entfernt nur Merge-Commits, die durch die Bearbeitung entartet sind (nicht solche, die schon ursprünglich entartet waren).
-never: 		 Entfernt keine entarteten Merge-Commits.
-```
+
+`always` : supprime tous les commits de fusion dégénérés.
+
+`auto` : (Par défaut) : supprime uniquement les validations de fusion qui ont été dégénérées par l'édition (pas celles qui ont déjà été dégénérées à l'origine).
+
+`never` : ne supprime pas les validations de fusion dégénérées.
+
 Une validation de fusion est considérée comme dégénérée si elle a moins de deux parents, si une validation assume les deux rôles de parent ou si l'un des parents est l'ancêtre de l'autre.
 
 

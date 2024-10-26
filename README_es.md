@@ -48,8 +48,8 @@ Los protocolos soportados son http, https, git y ssh. Para rutas locales, no use
 ### -P, --prefix-source-url=<PREFIX> # desde la versión 0.8
  
 Patrón de prefijo de URL para la URL de confirmación de origen. Esto establece el enlace a la confirmación de origen a la que se agregará el ID de confirmación.
-La URL del prefijo normalmente se obtiene automáticamente de la URL clonada, comprobando únicamente la accesibilidad.
-Si esto falla, esto se mostrará. En tal caso, no se ingresan confirmaciones de origen en las confirmaciones reescritas y se recomienda establecer el parámetro en este caso.
+La URL del prefijo normalmente se obtiene automáticamente a partir de la URL clonada, comprobando únicamente la accesibilidad.
+Si esto falla, se mostrará esto. En tal caso, no se ingresan confirmaciones de origen en las confirmaciones reescritas y se recomienda establecer el parámetro en este caso.
 Un aviso:
 --pattern-source-url=<PREFIX> está en desuso, pero aún se puede utilizar debido a la compatibilidad con versiones anteriores.
 
@@ -132,13 +132,13 @@ Especifica una o más ramas que se procesarán. De forma predeterminada, se rees
 
 ### --reemplazar-refs {eliminar-no-agregar, eliminar-y-agregar, actualizar-no-agregar, actualizar-o-agregar, actualizar-y-agregar}
 Estas opciones determinan cómo se manejan las referencias de reemplazo después de editar las confirmaciones:
-```
-delete-no-add: 	Alle bestehenden Ersatz-Referenzen werden gelöscht, und es werden keine neuen hinzugefügt.
-delete-and-add: Bestehende Ersatz-Referenzen werden gelöscht, aber für jede Commit-Neuschreibung werden neue hinzugefügt.
-update-no-add: 	Bestehende Ersatz-Referenzen werden aktualisiert, um auf die neuen Commit-Hashes zu zeigen, aber es werden keine neuen hinzugefügt.
-update-or-add: 	Neue Ersatz-Referenzen werden nur für die Commits hinzugefügt, die nicht zur Aktualisierung einer bestehenden Ersatz-Referenz verwendet werden. Bestehende werden aktualisiert.
-update-and-add: Bestehende Ersatz-Referenzen werden aktualisiert, und es werden neue Ersatz-Referenzen für jede Commit-Neuschreibung hinzugefügt.
-```
+
+`delete-no-add`: Se eliminarán todas las referencias de reemplazo existentes y no se agregarán otras nuevas.
+`delete-and-add`: Las referencias de reemplazo existentes se eliminan, pero se agregan otras nuevas para cada reescritura de confirmación.
+`update-no-add`: Las referencias de reemplazo existentes se actualizarán para señalar los nuevos hashes de confirmación, pero no se agregarán nuevos.
+`update-or-add`: Se agregan nuevas referencias de reemplazo solo para aquellas confirmaciones que no se utilizan para actualizar una referencia de reemplazo existente. Se actualizan los existentes.
+`update-and-add`: Las referencias de reemplazo existentes se actualizan y se agregan nuevas referencias de reemplazo para cada reescritura de confirmación.
+
 De forma predeterminada, se usa actualizar y agregar si $GIT_DIR/filter-repo/already_ran no existe; de ​​lo contrario, actualizar o agregar.
 De forma predeterminada, esta opción, incluso si está configurada como visible, generalmente garantiza que las referencias que apuntan a otras confirmaciones a través de su ID de confirmación, por ejemplo en mensajes de confirmación, se ajusten en consecuencia para que no apunten.
 Por ejemplo, podría haber una confirmación que sea una reversión de otra confirmación. Al revertir, Git generalmente siempre incluye el ID de confirmación de la confirmación revertida en el mensaje de confirmación.
@@ -149,21 +149,25 @@ Las referencias que ya están rotas, como las creadas cuando se seleccionan conf
 ### --prune-empty {siempre, auto, nunca}
 
 Esta opción controla si se eliminan las confirmaciones vacías y cómo:
-```
-always: 	 Entfernt immer alle leeren Commits.
-auto (Standard): Entfernt nur Commits, die durch die Neuschreibung leer werden (nicht solche, die im Original-Repo bereits leer waren, es sei denn, ihr Eltern-Commit wurde entfernt).
-never: 		 Entfernt niemals leere Commits.
-```
-Cuando se elimina la confirmación principal de una confirmación, el primer ancestro no eliminado se convierte en la nueva confirmación principal.
+
+`always`: Elimina siempre todas las confirmaciones vacías.
+
+`auto`: (predeterminado): solo elimina las confirmaciones que quedan vacías como resultado de la reescritura (no aquellas que ya estaban vacías en el repositorio original a menos que se haya eliminado su confirmación principal).
+
+`ever`: Nunca elimina confirmaciones vacías.
+
+Cuando se elimina el padre de una confirmación, el primer antepasado no eliminado se convierte en el nuevo padre de confirmación.
 
 
 ### --prune-degenerate {siempre, auto, nunca}
 Esta opción maneja específicamente las confirmaciones de fusión que podrían "degenerarse" al eliminar otras confirmaciones:
-```
-always: 	 Entfernt alle entarteten Merge-Commits.
-auto (Standard): Entfernt nur Merge-Commits, die durch die Bearbeitung entartet sind (nicht solche, die schon ursprünglich entartet waren).
-never: 		 Entfernt keine entarteten Merge-Commits.
-```
+
+`always`: Elimina todas las confirmaciones de fusión degeneradas.
+
+`auto` : (Predeterminado): solo elimina las confirmaciones de fusión que se degeneraron mediante la edición (no aquellas que ya se degeneraron originalmente).
+
+`never`: No elimina las confirmaciones de fusión degeneradas.
+
 Una confirmación de fusión se considera degenerada si tiene menos de dos padres, una confirmación asume ambos roles de padre o si uno de los padres es antepasado del otro.
 
 
