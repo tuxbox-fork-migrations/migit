@@ -22,9 +22,11 @@ Ein Problem besteht allerdings unverändert darin, dass Forkbetreiber möglicher
 ## Voraussetzungen
 
 Das Skript erfordert das Tool git-filter-repo. Stelle sicher, dass es installiert ist. Siehe: https://github.com/newren/git-filter-repo#how-do-i-install-it
+```bash
   * git >= 2.24.0
   * python3 >= 3.5
   * wget
+```
 
 ## Verwendung
 
