@@ -1,3 +1,7 @@
+<!-- LANGUAGE_LINKS_START -->
+<span style="color: grey;">🇩🇪 German</span> | [🇬🇧 English](README_en.md) | [🇪🇸 Spanish](README_es.md) | [🇫🇷 French](README_fr.md) | [🇮🇹 Italian](README_it.md)
+<!-- LANGUAGE_LINKS_END -->
+
 # Script zur Extraktion und Umschreibung von Git-Repositories
 
 Das Hauptziel dieses Skripts war es, die Struktur von originalen Repositorys wiederherzustellen, welche ursprünglich als Submodule betrieben werden, aber von Forkbetreibern in monolithische Monster-Repositories umgewandelt wurden. Solche Workflows machen Rückführungen von Änderungen aus solchen Forks quasi unmöglich oder sind nur sehr umständlich via Merge, Rebase oder Cherry-Pick umsetzbar.
@@ -90,7 +94,7 @@ Leerzeichen sind Trennzeichen.
 Standard: Alle Unterverzeichnisse der ersten Ebene innerhalb des Stammverzeichnisses.
 
                                       
-### --exclude-subdir-list='<LIST>'       
+### --exclude-subdir-list='<LIST>'
 Liste von Unterverzeichnissen, die nicht extrahiert werden sollen. Liste muss mit Apostrophen 'subx suby ...' umgeben sein. Leerzeichen als Trennzeichen.
 Die Option --subdir darf hier nicht gesetzt sein! 
 
@@ -233,4 +237,3 @@ Commits werden wie im vorherigen Beispiel umgeschrieben jedoch werden alle Unter
 ./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1/nextdir/tool
 ```
 Commits werden wie im vorherigen Beispiel umgeschrieben jedoch wird das Unterverzeichnisse 'tool' extrahiert.
- 
