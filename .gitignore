@@ -4,3 +4,4 @@ work
 .directory
 *.*-swp
 .gitignore*
+venv
