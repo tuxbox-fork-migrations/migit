@@ -26,9 +26,11 @@ Sin embargo, persiste un problema: es posible que los operadores de bifurcación
 ## Requisitos
 
 El script requiere la herramienta git-filter-repo. Asegúrate de que esté instalado. Ver: https://github.com/newren/git-filter-repo#how-do-i-install-it
-  *git>= 2.24.0
+```bash
+  * git >= 2.24.0
   * python3 >= 3.5
-  * debido a
+  * wget
+```
 
 ## usar
 
@@ -49,7 +51,7 @@ Los protocolos soportados son http, https, git y ssh. Para rutas locales, no use
  
 Patrón de prefijo de URL para la URL de confirmación de origen. Esto establece el enlace a la confirmación de origen a la que se agregará el ID de confirmación.
 La URL del prefijo normalmente se obtiene automáticamente a partir de la URL clonada, comprobando únicamente la accesibilidad.
-Si esto falla, se mostrará esto. En tal caso, no se ingresan confirmaciones de origen en las confirmaciones reescritas y se recomienda establecer el parámetro en este caso.
+Si esto falla, esto se mostrará. En tal caso, no se ingresan confirmaciones de origen en las confirmaciones reescritas y se recomienda establecer el parámetro en este caso.
 Un aviso:
 --pattern-source-url=<PREFIX> está en desuso, pero aún se puede utilizar debido a la compatibilidad con versiones anteriores.
 

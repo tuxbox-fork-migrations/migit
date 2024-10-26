@@ -26,9 +26,11 @@ However, one problem remains that fork operators may have only used merges on th
 ## Requirements
 
 The script requires the git-filter-repo tool. Make sure it is installed. See: https://github.com/newren/git-filter-repo#how-do-i-install-it
+```bash
   * git >= 2.24.0
   * python3 >= 3.5
-  * due to
+  * wget
+```
 
 ## use
 

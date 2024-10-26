@@ -13,7 +13,7 @@ Ce script offre la possibilité d'extraire ces référentiels à partir de sous-
 Migit s'appuie sur l'outil « git-filter-repo » pour recycler tous les sous-dossiers d'un référentiel monolithique dans le modèle de référentiel d'origine. Des référentiels entiers peuvent également être réécrits.
 Les messages de validation sont réécrits ou complétés autant que possible en utilisant des conventions de format communes, les identifiants de validation sont ajustés et, si nécessaire, le contenu original des validations est ajouté. Les références aux commits sources vers les référentiels sources sont insérées dans les commits réécrits, ce qui garantit une meilleure traçabilité, par exemple des cerises pioches. Les référentiels extraits sont stockés en fonction de leur nom dans un dossier de déploiement et en tant que sauvegarde avec un horodatage en tant que référentiels distincts. Pendant le processus de déploiement, un lien symbolique sans horodatage est toujours créé vers le dernier référentiel extrait. Les référentiels ainsi créés peuvent, par exemple, être traités automatiquement comme miroirs ou traités ultérieurement selon les besoins. 
 
-Cependant, un problème demeure : les opérateurs de fork n'ont peut-être utilisé que des fusions sur les sous-modules d'origine pour se faciliter les choses, ce qui peut même avoir été fait automatiquement ou avec le support de scripts, ou les référentiels ont été arbitrairement initialisés à partir d'un niveau de version arbitraire à un moment donné. indiquer. À long terme, cela crée inévitablement un désordre complexe dans l’histoire des forks. De plus, il peut y avoir une culture des commits bâclée et malheureusement il n’existe pas de véritable remède à cela, ce qui signifie que ces commits ne peuvent être optimisés que dans une mesure limitée en termes de contenu. Malheureusement, ce gâchis de backport ne peut être résolu que partiellement, voire pas du tout, en supprimant les commits vides ou dégénérés, au moins en les organisant chronologiquement et en appliquant certaines conventions de formatage courantes.
+Cependant, un problème demeure : les opérateurs de fork n'ont peut-être utilisé que des fusions sur les sous-modules d'origine pour se faciliter les choses, ce qui peut même avoir été fait automatiquement ou avec le support de scripts, ou les référentiels ont été arbitrairement initialisés à partir d'un niveau de version arbitraire à un moment donné. indiquer. À long terme, cela crée inévitablement un désordre complexe dans l’histoire des forks. De plus, il peut y avoir une culture des commits bâclée et malheureusement il n’existe pas de véritable remède à cela, ce qui signifie que ces commits ne peuvent être optimisés que dans une mesure limitée en termes de contenu. Malheureusement, ce gâchis de backport ne peut être résolu que partiellement, voire pas du tout, en supprimant les commits vides ou dégénérés, au moins en les organisant par ordre chronologique et en appliquant certaines conventions de formatage courantes.
 
 
 # Contenu
@@ -26,9 +26,11 @@ Cependant, un problème demeure : les opérateurs de fork n'ont peut-être utili
 ## Exigences
 
 Le script nécessite l'outil git-filter-repo. Assurez-vous qu'il est installé. Voir : https://github.com/newren/git-filter-repo#how-do-i-install-it
-  *git >= 2.24.0
-  * python3 >= 3,5
-  * en raison de
+```bash
+  * git >= 2.24.0
+  * python3 >= 3.5
+  * wget
+```
 
 ## utiliser
 

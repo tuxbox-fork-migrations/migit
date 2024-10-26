@@ -26,9 +26,11 @@ Tuttavia, rimane un problema: gli operatori fork potrebbero aver utilizzato le f
 ## Requisiti
 
 Lo script richiede lo strumento git-filter-repo. Assicurati che sia installato. Vedi: https://github.com/newren/git-filter-repo#how-do-i-install-it
-  *git >= 2.24.0
-  *python3 >= 3.5
-  * a causa di
+```bash
+  * git >= 2.24.0
+  * python3 >= 3.5
+  * wget
+```
 
 ## utilizzo
 
