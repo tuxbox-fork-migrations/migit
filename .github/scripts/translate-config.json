@@ -3,7 +3,7 @@
     "template_md": "readme-template.md",
     "output_dir": ".",
     "prefix": "README_",
-    "main_readme": "README.md",
+    "main_doc": "README.md",
     "target_languages": {
         "de": ["German", "🇩🇪"],
         "en": ["English", "🇬🇧"],
