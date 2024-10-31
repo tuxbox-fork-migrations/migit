@@ -14,6 +14,13 @@ jobs:
   translate:
     runs-on: ubuntu-latest
 
+    env:
+      PYTHON_VERSION: 3.x
+      GIT_USER_EMAIL: "actions@github.com"
+      GIT_USER_NAME: "GitHub Actions"
+      TRANSLATE_SCRIPT_URL: "https://raw.githubusercontent.com/dbt1/translate-md/refs/heads/master/translate-md.py"
+      TRANSLATE_SCRIPT: "translate-md.py"
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -21,23 +28,23 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.x
+        python-version: ${{ env.PYTHON_VERSION }}
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install --upgrade googletrans==3.1.0a0
-        curl -o translate-md.py https://raw.githubusercontent.com/dbt1/translate-md/refs/heads/master/translate-md.py
-        chmod 755 translate-md.py
+        curl -o ${{ env.TRANSLATE_SCRIPT }} ${{ env.TRANSLATE_SCRIPT_URL }}
+        chmod 755 ${{ env.TRANSLATE_SCRIPT }}
 
     - name: Translate README
       run: |
-        python translate-md.py --template-md readme-template.md --output-dir . --prefix README_ --main-doc README.md -c readme-translate-config.json -s de
+        python ${{ env.TRANSLATE_SCRIPT }} --template-md readme-template.md --output-dir . --prefix README_ --main-doc README.md -c readme-translate-config.json -s de
 
     - name: Commit and push translated README
       run: |
-        git config --global user.email "actions@github.com"
-        git config --global user.name "GitHub Actions"
+        git config --global user.email "${{ env.GIT_USER_EMAIL }}"
+        git config --global user.name "${{ env.GIT_USER_NAME }}"
         git add README*.md
         git commit -m "readme: Automatically translated README"
         git push
