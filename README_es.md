@@ -15,7 +15,6 @@ Los mensajes de confirmación se reescriben o complementan tanto como sea posibl
 
 Sin embargo, persiste un problema: es posible que los operadores de bifurcación solo hayan utilizado fusiones en los submódulos originales para facilitarles las cosas, lo que incluso puede haber sido hecho automáticamente o con soporte de script, o que los repositorios se inicializaron arbitrariamente desde un nivel de versión arbitrario en algún momento. punto. A la larga, esto crea inevitablemente un desorden complejo en la historia de las bifurcaciones. Además, puede haber una cultura de confirmación descuidada y desafortunadamente no existe una cura real para esto, lo que significa que estas confirmaciones solo se pueden optimizar hasta cierto punto en términos de contenido. Desafortunadamente, este desorden de backport sólo puede solucionarse parcialmente, en todo caso, eliminando confirmaciones vacías o degeneradas, al menos organizándolas cronológicamente y aplicando algunas convenciones de formato comunes.
 
-
 # Contenido
 
   * [Requisitos](#requisitos)
@@ -34,8 +33,7 @@ El script requiere la herramienta git-filter-repo. Asegúrate de que esté insta
 
 ## usar
 
-
-### ./migit -u <clon URL> [OPCIONES]
+### ./migit -u <clone url> [OPCIONES]
  
 Especifique la URL de clonación del repositorio Git que se va a reescribir.
 Si la URL es el primer argumento, se puede omitir la especificación del indicador '-u'.
@@ -44,14 +42,13 @@ Si la URL es el primer argumento, se puede omitir la especificación del indicad
 ```
 Los protocolos soportados son http, https, git y ssh. Para rutas locales, no use file://, ¡solo la ruta relativa al repositorio! 
 
-
 ## Opciones
 
 ### -P, --prefix-source-url=<PREFIX> # desde la versión 0.8
  
 Patrón de prefijo de URL para la URL de confirmación de origen. Esto establece el enlace a la confirmación de origen a la que se agregará el ID de confirmación.
-La URL del prefijo normalmente se obtiene automáticamente a partir de la URL clonada, comprobando únicamente la accesibilidad.
-Si esto falla, esto se mostrará. En tal caso, no se ingresan confirmaciones de origen en las confirmaciones reescritas y se recomienda establecer el parámetro en este caso.
+La URL del prefijo normalmente se obtiene automáticamente de la URL clonada, comprobando únicamente la accesibilidad.
+Si esto falla, se mostrará esto. En tal caso, no se ingresan confirmaciones de origen en las confirmaciones reescritas y se recomienda establecer el parámetro en este caso.
 Un aviso:
 --pattern-source-url=<PREFIX> está en desuso, pero aún se puede utilizar debido a la compatibilidad con versiones anteriores.
 
@@ -67,19 +64,15 @@ Un aviso:
 También cabe señalar que extraer la dirección base de los repositorios locales o de las URL no funciona para los protocolos ssh o git. Si se desea un enlace de confirmación de fuente,
 Por lo tanto, el parámetro siempre debe configurarse explícitamente para garantizar que la dirección base esté instalada correctamente. De lo contrario, no se ingresará la línea para el enlace.
 
-
-### -T, --target-root-project-name=<NOMBRE>
+### -T, --nombre-proyecto-raíz-destino=<NAME>
 Nombre de la carpeta de destino dentro de la carpeta de implementación.
 Valor predeterminado: nombre del proyecto clonado y marca de tiempo de la reescritura. De forma predeterminada, el nombre del proyecto se genera a partir de la URL del clon.
 
-
-### -p, --prefijo-nombre-proyecto=<PREFIJO>
+### -p, --prefijo-nombre-del-proyecto=<PREFIX>
 Prefijo de la carpeta de destino que precede al nombre del repositorio extraído.
 
-   
-### -s, --project-name-suffix=<SUFIJO>
+### -s, --sufijo-nombre-del-proyecto=<SUFFIX>
 Sufijo de la carpeta de destino añadido al nombre del repositorio extraído.
-
 
 ### -S, --subdirectorio
 Subdirectorio a extraer.
@@ -89,48 +82,38 @@ Si se va a reescribir un repositorio por completo, este parámetro puede simplem
 #oder
   -S .
 ```
-
-### --subdir-list='<LISTA>'
+### --subdir-list='<LIST>'
 Lista de subdirectorios que se reescribirán. El listado del directorio debe estar rodeado por apóstrofes 'sub1 sub2...'.                       
 Los espacios son separadores. 
 Valor predeterminado: todos los subdirectorios de primer nivel dentro del directorio raíz.
-
-                                      
-### --exclude-subdir-list='<LISTA>'
+                                  
+### --exclude-subdir-list='<LIST>'
 Lista de subdirectorios que no se extraerán. La lista debe estar rodeada por apóstrofes 'subx suby...'. El espacio como separador.
 ¡La opción --subdir no debe configurarse aquí! 
 
-
-### --commit-introduction=<PATRÓN>
+### --commit-introducción=<PATTERN>
 Introducciones de confirmación de patrón en la primera línea de cada confirmación reescrita. Valor predeterminado: el nombre del subdirectorio respectivo o el nombre del repositorio original.
 Esto tiene especial sentido si se extraen subdirectorios y generalmente se desea una introducción uniforme al mensaje de confirmación.
 
-
-### --commit-suffix=<SUFIJO>
+### --commit-suffix=<SUFFIX>
 Agrega una firma (en el sentido de un sufijo) al final de cada mensaje de confirmación modificado.
-
 
 ### -d, --deploy-dir=<DIR>
 Directorio de destino (carpeta de implementación) en el que se almacenan los repositorios reescritos. Valor predeterminado: ./deploy
-
 
 ### -q
 Suprime la visualización del progreso. Esto tiene sentido si el script se va a ejecutar automáticamente, por ejemplo en trabajos cron. En este modo, el script también devuelve EXIT_STAUTS 0 en caso de errores,
 para que el script no aborte posibles tareas automatizadas en las que esté incrustado, procesos más complejos. Sólo se generan registros de estado que contienen información sobre la llamada y mensajes de error. Estas salidas se pueden utilizar aún más para el registro.
 
-
-### --id-rsa-file=<RUTA>
+### --id-rsa-file=<PATH>
 Ruta relativa al archivo de clave ssh privada
-
 
 ### --reiniciar
 Restablece todos los mensajes de confirmación reescritos. Esto significa que las entradas que Migit ingresó en las confirmaciones se eliminarán nuevamente. Las descripciones de correo electrónico y de autor no se ven afectadas.
 Cabe señalar que Migit solo puede restablecer las entradas realizadas por el propio Migit. Por lo tanto, se elimina todo lo que se ingresó en los mensajes de confirmación en "Datos de confirmación de origen". 
 
-
-### --branch-list=<'SUCURSAL1 SUCURSAL2...'>
+### --branch-list=<'BRANCH1 BRANCH2 ...'>
 Especifica una o más ramas que se procesarán. De forma predeterminada, se reescriben todas las ramas del repositorio de origen.
-
 
 ### --reemplazar-refs {eliminar-no-agregar, eliminar-y-agregar, actualizar-no-agregar, actualizar-o-agregar, actualizar-y-agregar}
 Estas opciones determinan cómo se manejan las referencias de reemplazo después de editar las confirmaciones:
@@ -160,7 +143,6 @@ Esta opción controla si se eliminan las confirmaciones vacías y cómo:
 
 Cuando se elimina el padre de una confirmación, el primer antepasado no eliminado se convierte en el nuevo padre de confirmación.
 
-
 ### --prune-degenerate {siempre, auto, nunca}
 Esta opción maneja específicamente las confirmaciones de fusión que podrían "degenerarse" al eliminar otras confirmaciones:
 
@@ -171,7 +153,6 @@ Esta opción maneja específicamente las confirmaciones de fusión que podrían 
 `never`: No elimina las confirmaciones de fusión degeneradas.
 
 Una confirmación de fusión se considera degenerada si tiene menos de dos padres, una confirmación asume ambos roles de padre o si uno de los padres es antepasado del otro.
-
 
 ### --no-ff
 Esta opción afecta el comportamiento de --prune-degenerate y es útil en proyectos que siempre usan confirmaciones de combinación --no-ff (sin avance rápido). Previene la eliminación de la confirmación del primer padre incluso si se convierte en antepasado de otro padre.
@@ -230,16 +211,14 @@ Las confirmaciones se reescriben así:
 ```
 Las confirmaciones se reescriben como en el ejemplo anterior, pero esta vez para subdirectorios específicos.
 
-
 ### Extraiga subdirectorios de un repositorio, pero excluya ciertos subdirectorios, especificando la confirmación de origen
 ```bash
 ./migit-u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --exclude-subdir-list='subdir1 subdir2'
 ```
 Las confirmaciones se reescriben como en el ejemplo anterior, pero se extraen todos los subdirectorios excepto subdir1 y subdir2.
 
-
 ### Extraiga subdirectorios de niveles más profundos de un repositorio, especificando la confirmación de origen
 ```bash
 ./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1/nextdir/tool
 ```
-Las confirmaciones se reescriben como en el ejemplo anterior pero se extrae el subdirectorio 'herramienta'.
+Las confirmaciones se reescriben como en el ejemplo anterior, pero solo se extrae el subdirectorio 'herramienta'.

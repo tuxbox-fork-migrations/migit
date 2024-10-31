@@ -13,8 +13,7 @@ Poiché l'automazione con l'aiuto di Migit è anche possibile per eseguire autom
 Migit si affida allo strumento "git-filter-repo" per riciclare eventuali sottocartelle da un repository monolitico nel modello di repository originale. È anche possibile riscrivere interi repository.
 I messaggi di commit vengono riscritti o integrati il ​​più possibile utilizzando convenzioni di formato comuni, gli ID di commit vengono modificati e, se necessario, viene aggiunto il contenuto originale dei commit. I riferimenti ai commit di origine ai repository di origine vengono inseriti nei commit riscritti, il che garantisce una migliore tracciabilità, ad esempio dei cherry pick. I repository estratti vengono archiviati in base al loro nome in una cartella di distribuzione e come backup con un timestamp come repository separati. Durante il processo di distribuzione, viene sempre creato un collegamento simbolico senza timestamp all'ultimo repository estratto. I repository così creati possono, ad esempio, essere elaborati automaticamente come mirror o ulteriormente elaborati secondo necessità. 
 
-Tuttavia, rimane un problema: gli operatori fork potrebbero aver utilizzato le fusioni sui sottomoduli originali solo per rendere le cose apparentemente facili per loro stessi, il che potrebbe anche essere stato fatto automaticamente o con il supporto di script, o i repository sono stati inizializzati arbitrariamente da un livello di versione arbitrario in alcuni casi. punto. Alla lunga, ciò crea inevitabilmente un complesso disordine nella storia delle forcelle. Inoltre, può esserci una cultura dei commit sciatta e sfortunatamente non esiste una vera cura per questo, il che significa che questi commit possono essere ottimizzati solo in misura limitata in termini di contenuto. Sfortunatamente, questo pasticcio del backport può essere risolto solo parzialmente, se non del tutto, rimuovendo commit vuoti o degenerati, almeno organizzandoli cronologicamente e applicando alcune convenzioni di formattazione comuni.
-
+Tuttavia, rimane un problema: gli operatori fork potrebbero aver utilizzato le fusioni sui sottomoduli originali solo per rendere le cose apparentemente facili per loro stessi, il che potrebbe anche essere stato fatto automaticamente o con il supporto di script, o i repository sono stati inizializzati arbitrariamente da un livello di versione arbitrario in alcuni casi. punto. Alla lunga, ciò crea inevitabilmente un complesso disordine nella storia delle forcelle. Inoltre, può esserci una cultura del commit sciatta e sfortunatamente non esiste una vera cura per questo, il che significa che questi commit possono essere ottimizzati solo in misura limitata in termini di contenuto. Sfortunatamente, questo pasticcio del backport può essere risolto solo parzialmente, se non del tutto, rimuovendo commit vuoti o degenerati, almeno organizzandoli cronologicamente e applicando alcune convenzioni di formattazione comuni.
 
 # Contenuto
 
@@ -34,16 +33,14 @@ Lo script richiede lo strumento git-filter-repo. Assicurati che sia installato. 
 
 ## utilizzo
 
-
-### ./migit -u <URL clone> [OPZIONI]
+### ./migit -u <clone url> [OPZIONI]
  
 Specificare l'URL clone del repository Git da riscrivere.
 Se l'URL è il primo argomento, è possibile omettere la specifica del flag '-u'.
 ```bash
  ./migit <clone url> [OPTIONS]
 ```
-I protocolli supportati sono http, https, git e ssh. Per i percorsi locali, non utilizzare file://, solo il percorso relativo al repository! 
-
+I protocolli supportati sono http, https, git e ssh. Per i percorsi locali, non utilizzare file://, ma solo il percorso relativo al repository! 
 
 ## Opzioni
 
@@ -67,19 +64,15 @@ Un avviso:
 Va inoltre notato che l'estrazione dell'indirizzo di base da repository o URL locali non funziona per i protocolli ssh o git. Se si desidera un collegamento di commit di origine,
 Il parametro deve quindi essere sempre impostato esplicitamente per garantire che l'indirizzo di base sia installato correttamente. In caso contrario non verrà inserita la riga per il collegamento.
 
-
-### -T, --target-root-nome-progetto=<NOME>
+### -T, --target-root-nome-progetto=<NAME>
 Nome della cartella di destinazione all'interno della cartella di distribuzione.
 Predefinito: nome del progetto clonato e timestamp della riscrittura. Per impostazione predefinita, il nome del progetto viene generato dall'URL del clone.
-
 
 ### -p, --prefisso-nome-progetto=<PREFIX>
 Prefisso della cartella di destinazione che precede il nome del repository estratto.
 
-   
-### -s, --suffisso-nome-progetto=<SUFFISSO>
+### -s, --suffisso-nome-progetto=<SUFFIX>
 Suffisso della cartella di destinazione aggiunto al nome del repository estratto.
-
 
 ### -S, --sottodir
 Sottodirectory da estrarre.
@@ -89,48 +82,38 @@ Se un repository deve essere completamente riscritto, questo parametro può esse
 #oder
   -S .
 ```
-
 ### --subdir-list='<LIST>'
 Elenco delle sottodirectory da riscrivere. L'elenco delle directory deve essere racchiuso tra apostrofi 'sub1 sub2...'.                       
 Gli spazi sono separatori. 
 Impostazione predefinita: tutte le sottodirectory di primo livello all'interno della directory root.
-
-                                      
+                                  
 ### --exclude-subdir-list='<LIST>'
 Elenco delle sottodirectory da non estrarre. L'elenco deve essere racchiuso tra apostrofi 'subx suby...'. Lo spazio come separatore.
 L'opzione --subdir non deve essere impostata qui! 
 
-
-### --commit-introduction=<MODELLO>
+### --introduzione-commit=<PATTERN>
 Introduzioni del commit del modello sulla prima riga di ogni commit riscritto. Predefinito: il rispettivo nome della sottodirectory o il nome del repository originale.
 Ciò ha particolarmente senso se vengono estratte sottodirectory e generalmente si desidera un'introduzione uniforme al messaggio di commit.
 
-
-### --commit-suffix=<SUFFISSO>
+### --suffisso-commit=<SUFFIX>
 Aggiunge una firma (nel senso di un suffisso) alla fine di ogni messaggio di commit modificato.
-
 
 ### -d, --deploy-dir=<DIR>
 Directory di destinazione (cartella di distribuzione) in cui sono archiviati i repository riscritti. Impostazione predefinita: ./deploy
-
 
 ### -Q
 Sopprime la visualizzazione dell'avanzamento. Ciò ha senso se lo script deve essere eseguito automaticamente, ad es. nei lavori cron. In questa modalità lo script restituisce anche EXIT_STAUTS 0 in caso di errori,
 in modo che lo script non interrompa eventuali attività automatizzate in cui è incorporato, processi più complessi. Vengono emessi solo i registri di stato contenenti informazioni sulla chiamata e messaggi di errore. Queste uscite possono essere ulteriormente utilizzate per la registrazione.
 
-
-### --id-rsa-file=<PERCORSO>
+### --id-rsa-file=<PATH>
 Percorso relativo al file della chiave ssh privata
-
 
 ### --reset
 Reimposta tutti i messaggi di commit riscritti. Ciò significa che le voci che Migit ha inserito nei commit verranno nuovamente rimosse. Le e-mail e le descrizioni dell'autore rimangono inalterate.
 Va notato che Migit può ripristinare solo le voci effettuate da Migit stessa. Tutto ciò che è stato inserito nei messaggi di commit alla voce “Dati commit origine” viene quindi rimosso. 
 
-
-### --branch-list=<'RAMICO1 RAMO2 ...'>
+### --elenco-filiali=<'BRANCH1 BRANCH2 ...'>
 Specifica uno o più rami da elaborare. Per impostazione predefinita, tutti i rami del repository di origine vengono riscritti.
-
 
 ### --replace-refs {elimina-non-aggiungi, elimina-e-aggiungi, aggiorna-no-aggiungi, aggiorna-o-aggiungi, aggiorna-e-aggiungi}
 Queste opzioni determinano come vengono gestiti i riferimenti sostitutivi dopo la modifica dei commit:
@@ -160,7 +143,6 @@ Questa opzione controlla se e come vengono rimossi i commit vuoti:
 
 Quando il genitore di un commit viene rimosso, il primo antenato non rimosso diventa il nuovo commit genitore.
 
-
 ### --prune-degenerate {sempre, automatico, mai}
 Questa opzione gestisce specificamente i commit di unione che potrebbero essere "degenerati" rimuovendo altri commit:
 
@@ -171,7 +153,6 @@ Questa opzione gestisce specificamente i commit di unione che potrebbero essere 
 `never`: non rimuove i commit di unione degenerati.
 
 Un commit di unione è considerato degenerato se ha meno di due genitori, un commit assume entrambi i ruoli di genitore o un genitore è un antenato dell'altro.
-
 
 ### --no-ff
 Questa opzione influenza il comportamento di --prune-degenerate ed è utile nei progetti che utilizzano sempre i commit di unione --no-ff (nessun avanzamento rapido). Impedisce la rimozione del commit del primo genitore anche se diventa un antenato di un altro genitore.
@@ -230,16 +211,14 @@ I commit vengono riscritti in questo modo:
 ```
 I commit vengono riscritti come nell'esempio precedente, ma questa volta per sottodirectory specifiche.
 
-
 ### Estrai le sottodirectory di un repository, ma escludi alcune sottodirectory, specificando il commit di origine
 ```bash
 ./migit-u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --exclude-subdir-list='subdir1 subdir2'
 ```
 I commit vengono riscritti come nell'esempio precedente ma vengono estratte tutte le sottodirectory tranne subdir1 e subdir2.
 
-
 ### Estrai sottodirectory dai livelli più profondi di un repository, specificando il commit di origine
 ```bash
 ./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1/nextdir/tool
 ```
-I commit vengono riscritti come nell'esempio precedente ma viene estratta la sottodirectory 'tool'.
+I commit vengono riscritti come nell'esempio precedente ma viene estratta solo la sottodirectory 'tool'.
