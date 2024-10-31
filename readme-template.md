@@ -217,5 +217,5 @@ Commits werden wie im vorherigen Beispiel umgeschrieben jedoch werden alle Unter
 ```bash
 ./migit -u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --subdir subdir1/nextdir/tool
 ```
-Commits werden wie im vorherigen Beispiel umgeschrieben jedoch wird das Unterverzeichnisse 'tool' extrahiert.
+Commits werden wie im vorherigen Beispiel umgeschrieben jedoch wird nur das Unterverzeichnis 'tool' extrahiert.
  
