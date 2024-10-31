@@ -11,7 +11,6 @@ Commit-Messages werden so weit wie möglich mit gängigen Formatkonventionen umg
 
 Ein Problem besteht allerdings unverändert darin, dass Forkbetreiber möglicherweise, um es sich vermeintlich einfach zu machen, nur Merges auf die Original-Submodule verwendet haben, was möglicherweise sogar automatisiert oder scriptgestützt erledigt wurde oder die Repositorys wurden irgendwann willkürlich von einem beliebigen Versionsstand initialisiert. Dadurch ensteht auf Dauer zwangsläufig eine komplexe Unordnung in der Historie der Forks. Dazu kann sich noch schlampige Commitkultur gesellen und dagegen ist leider nicht wirklich ein Kraut gewachsen, so das sich diese Commits inhaltlich nur beschränkt optimieren lassen. Leider lässt sich diese Unordnung bei der Rückportierung, wenn überhaupt, nur teilweise beheben, indem leere oder entartete Commits entfernt werden und sich diese zumindest chronologisch einordnen lassen und einige gängige Formatkonventionen angewendet werden.
 
-
 # Inhalt
 
   * [Voraussetzungen](#voraussetzungen)
@@ -30,7 +29,6 @@ Das Skript erfordert das Tool git-filter-repo. Stelle sicher, dass es installier
 
 ## Verwendung
 
-
 ### ./migit -u <clone url> [OPTIONS]
  
 Clone URL des Git-Repositories angeben, welches umgeschrieben werden soll.
@@ -39,7 +37,6 @@ Wenn die URL das erste Argument ist, dann kann die Angabe des Flags '-u' weggela
  ./migit <clone url> [OPTIONS]
 ```
 Als Protokolle werden http, https, git und ssh unterstützt. Für lokale Pfade, verwende nicht file://, sondern nur den relativen Pfad zum Repository! 
-
 
 ## Optionen
 
@@ -63,19 +60,15 @@ Hinweis:
 Zu beachten wäre noch, dass die Extraktion der Basisadresse aus lokalen Repositorys oder URL's für ssh- bzw. git-Protolle nicht funktioniert. Wenn ein Quell-Commit Link gwünscht ist,
 muss der Parameter daher explizit immer gesetzt werden, um sicherzustellen, dass die Basisadresse korrekt eingebaut wird. Andernfalls wird die Zeile für den Link nicht eingetragen.
 
-
 ### -T, --target-root-project-name=<NAME>
 Name des Zielordners innerhalb des Deploy-Ordners.
 Standard: Name des geklonten Projekts und Zeitstempel der Umschreibung. Der Projektname wird standardmäßig aus der Clone-URL generiert.
 
-
 ### -p, --project-name-prefix=<PREFIX>
 Prefix des Zielordners das dem extrahierten Repository-Namen vorangestellt wird.
 
-   
 ### -s, --project-name-suffix=<SUFFIX>
 Suffix des Zielordners das dem extrahierten Repository-Namen angehängt wird.
-
 
 ### -S, --subdir
 Unterverzeichnis das extrahiert werden soll.
@@ -85,48 +78,38 @@ Soll ein Repository komplett umgeschrieben werden, kann dieser Parameter einfach
 #oder
   -S .
 ```
-
 ### --subdir-list='<LIST>'
 Liste von Unterverzeichnissen, die umgeschrieben werden sollen. Verzeichnisliste muss mit Apostrophen 'sub1 sub2 ...' umgeben sein.                       
 Leerzeichen sind Trennzeichen. 
 Standard: Alle Unterverzeichnisse der ersten Ebene innerhalb des Stammverzeichnisses.
-
-                                      
+                                  
 ### --exclude-subdir-list='<LIST>'       
 Liste von Unterverzeichnissen, die nicht extrahiert werden sollen. Liste muss mit Apostrophen 'subx suby ...' umgeben sein. Leerzeichen als Trennzeichen.
 Die Option --subdir darf hier nicht gesetzt sein! 
-
 
 ### --commit-introduction=<PATTERN>
 Muster für Commit Einleitungen in der ersten Zeile jedes umgeschriebenen Commits. Standard: der jeweilige Unterverzeichnisname bzw. der Original-Reponame.
 Dies macht vorallem Sinn wenn Unterverzeichnisse extrahiert werden und generell eine einheitliche Einleitung der Commit-Nachricht gewünscht ist.
 
-
 ### --commit-suffix=<SUFFIX>
 Fügt eine Signatur (im Sinne eines Suffix') an das Ende jeder modifizierten Commit Message an.
 
-
 ### -d, --deploy-dir=<DIR>
 Zielverzeichnis (Deploy-Ordner) in das die umgeschriebenen Repositories abgelegt werden. Standard: ./deploy
-
 
 ### -q
 Unterdrückt die Fortschrittsanzeige. Dies ist sinnvoll, wenn das Script automatisiert ausgeführt werden soll, z.B. in Cron-Jobs. Das Skript gibt außerdem in diesem Modus bei Fehlern den EXIT_STAUTS 0 zurück,
 damit das Skript mögliche automatisierte Aufgaben in dem es eingebettet ist, komplexere Vorgänge nicht abbricht. Es werden lediglich nur Statusprotokolle ausgegeben, die Angaben zum Aufruf und Fehlermeldungen enthalten. Diese Ausgaben können zur Protollierung weiter verwendet werden.
 
-
 ### --id-rsa-file=<PATH>
 Relativer Pfad zur Privaten ssh Keydatei
-
 
 ### --reset
 Setzt alle umgeschriebenen Commit-Messages zurück. Das bedeutet, dass die Einträge, welche Migit in die Commits eingetragen hat, wieder entfernt werden. E-Mail- und Autoren-Umschreibungen bleiben unberührt.
 Zu beachten ist, dass Migit nur Eintragungen zurücksetzen kann, die von Migit selbst vorgenommen wurden. Es wird daher alles entfernt, was innerhalb der Commit-Messages unter "Origin commit data" eingetragen wurde. 
 
-
 ### --branch-list=<'BRANCH1 BRANCH2 ...'>
 Legt einen oder mehrere Branches fest, die verarbeitet werden sollen. Standardmäßig werden alle Branches aus dem Quellrepository umgeschrieben.
-
 
 ### --replace-refs {delete-no-add, delete-and-add, update-no-add, update-or-add, update-and-add}
 Diese Optionen bestimmen, wie mit Ersatz-Referenzen (replace refs) nach der Bearbeitung von Commits umgegangen wird:
@@ -156,7 +139,6 @@ Diese Option steuert, ob und wie leere Commits entfernt werden:
 
 Wenn der Eltern-Commit eines Commits entfernt wird, wird der erste nicht entfernte Vorfahre zum neuen Eltern-Commit.
 
-
 ### --prune-degenerate {always, auto, never}
 Diese Option behandelt speziell Merge-Commits, die durch das Entfernen anderer Commits "entartet" sein könnten:
 
@@ -167,7 +149,6 @@ Diese Option behandelt speziell Merge-Commits, die durch das Entfernen anderer C
 `never`: 		 Entfernt keine entarteten Merge-Commits.
 
 Ein Merge-Commit gilt als entartet, wenn er weniger als zwei Eltern hat, ein Commit beide Elternrollen einnimmt, oder ein Elternteil Vorfahre des anderen ist.
-
 
 ### --no-ff
 Diese Option beeinflusst das Verhalten von --prune-degenerate und ist nützlich in Projekten, die immer Merge-Commits mit --no-ff (no fast-forward) verwenden. Sie verhindert das Entfernen des ersten Eltern-Commits, selbst wenn er ein Vorfahre eines anderen Elternteils wird.
@@ -226,13 +207,11 @@ Commits werden so umgeschrieben:
 ```
 Commits werden wie im vorherigen Beispiel umgeschrieben jedoch diesmal für bestimmte Unterverzeichnisse.
 
-
 ### Unterverzeichnisse eines Repositories extrahieren, aber bestimmte Unterverzeichnisse ausschließen, mit Angabe des Quellcommits
 ```bash
 ./migit-u https://github.com/example/repository.git --pattern-source-url=https://github.com/example/repository/commit --exclude-subdir-list='subdir1 subdir2'
 ```
 Commits werden wie im vorherigen Beispiel umgeschrieben jedoch werden alle Unterverzeichnisse außer subdir1 und subdir2 extrahiert.
-
 
 ### Unterverzeichnisse aus tieferen Ebenen eines Repositories extrahieren, mit Angabe des Quellcommits
 ```bash
