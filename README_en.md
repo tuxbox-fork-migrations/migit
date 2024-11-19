@@ -1,8 +1,10 @@
 <!-- LANGUAGE_LINKS_START -->
-[🇩🇪 German](README_de.md) | <span style="color: grey;">🇬🇧 English</span> | [🇪🇸 Spanish](README_es.md) | [🇫🇷 French](README_fr.md) | [🇮🇹 Italian](README_it.md)
+[🇩🇪 German](README_de.md) | <span style="color: grey;">🇬🇧 English</span>
 <!-- LANGUAGE_LINKS_END -->
 
 # Script for extracting and rewriting Git repositories
+
+Version: 0.9.29
 
 The main goal of this script was to restore the structure of original repositories, which were originally operated as submodules but were converted into monolithic monster repositories by fork operators. Such workflows make it virtually impossible to revert changes from such forks or can only be implemented with great difficulty via merge, rebase or cherry pick.
 
@@ -10,7 +12,7 @@ This script provides the ability to extract such repositories from subdirectorie
 
 Since automation with the help of Migit is also possible to automatically mirror forks, you can forego using the actual repositories directly and instead only use the converted mirror versions.
 
-Migit relies on the “git-filter-repo” tool to recycle any subfolders from a monolithic repository back into the original repository model. Entire repositories can also be rewritten.
+Migit relies on the `git-filter-repo` tool to recycle any subfolders from a monolithic repository back into the original repository model. Entire repositories can also be rewritten.
 Commit messages are rewritten or supplemented as much as possible using common format conventions, commit IDs are adjusted and, if necessary, the original content of the commits is added. References to the source commits to the source repositories are inserted into the rewritten commits, which ensures better traceability, for example of cherry picks. The extracted repositories are stored according to their name in a deploy folder and as a backup with a timestamp as separate repositories. During the deployment process, a symlink without a timestamp is always created to the last extracted repository. The repositories created in this way can, for example, be processed automatically as mirrors or further processed as required. 
 
 However, one problem remains that fork operators may have only used merges on the original submodules to make things supposedly easy for themselves, which may even have been done automatically or with script support, or the repositories were arbitrarily initialized from an arbitrary version level at some point. In the long run, this inevitably creates a complex disorder in the history of the forks. In addition, there can be a sloppy commit culture and unfortunately there is no real cure for this, meaning that these commits can only be optimized to a limited extent in terms of content. Unfortunately, this backport mess can only be partially addressed, if at all, by removing empty or degenerate commits, at least organizing them chronologically, and applying some common formatting conventions.
@@ -24,7 +26,7 @@ However, one problem remains that fork operators may have only used merges on th
 
 ## Requirements
 
-The script requires the git-filter-repo tool. Make sure it is installed. See: https://github.com/newren/git-filter-repo#how-do-i-install-it
+The script requires the `git-filter-repo` ​​tool. Make sure it is installed. See: https://github.com/newren/git-filter-repo#how-do-i-install-it
 ```bash
   * git >= 2.24.0
   * python3 >= 3.5
@@ -47,7 +49,7 @@ The protocols supported are http, https, git and ssh. For local paths, don't use
 ### -P, --prefix-source-url=<PREFIX> # from version 0.8
  
 URL prefix pattern for the source commit URL. This sets the link to the source commit to which the commit ID will be appended.
-The prefix URL is usually automatically obtained from the clone URL, with only accessibility being checked.
+The prefix URL is usually obtained automatically from the clone URL, with only accessibility being checked.
 If this fails, this will be displayed. In such a case, no source commits are entered into the rewritten commits and it is recommended to set the parameter in this case.
 A notice:
 --pattern-source-url=<PREFIX> is deprecated, but is still usable due to backwards compatibility!
@@ -96,7 +98,7 @@ Pattern commit introductions on the first line of each rewritten commit. Default
 This makes particular sense if subdirectories are extracted and a uniform introduction to the commit message is generally desired.
 
 ### --commit-suffix=<SUFFIX>
-Appends a signature (in the sense of a suffix) to the end of each modified commit message.
+Adds a signature (in the sense of a suffix) to the end of each modified commit message.
 
 ### -d, --deploy-dir=<DIR>
 Target directory (deploy folder) in which the rewritten repositories are stored. Default: ./deploy

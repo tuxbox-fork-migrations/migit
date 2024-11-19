@@ -1,16 +1,18 @@
 <!-- LANGUAGE_LINKS_START -->
-<span style="color: grey;">🇩🇪 German</span> | [🇬🇧 English](README_en.md) | [🇪🇸 Spanish](README_es.md) | [🇫🇷 French](README_fr.md) | [🇮🇹 Italian](README_it.md)
+<span style="color: grey;">🇩🇪 German</span> | [🇬🇧 English](README_en.md)
 <!-- LANGUAGE_LINKS_END -->
 
 # Script zur Extraktion und Umschreibung von Git-Repositories
+
+Version: 0.9.29
 
 Das Hauptziel dieses Skripts war es, die Struktur von originalen Repositorys wiederherzustellen, welche ursprünglich als Submodule betrieben werden, aber von Forkbetreibern in monolithische Monster-Repositories umgewandelt wurden. Solche Workflows machen Rückführungen von Änderungen aus solchen Forks quasi unmöglich oder sind nur sehr umständlich via Merge, Rebase oder Cherry-Pick umsetzbar.
 
 Dieses Skript bietet die Möglichkeit, solche Repositorys aus Unterverzeichnissen zu extrahieren. Die so erzeugten Repositorys lassen sich anschließend ähnlich wie Remote-Repositorys in das ursprüngliche Submodul-Repositorys einbinden. Allerdings divergieren diese in der Regel. Daher funktionieren Merges normalerweise in der Regel generell nach wie vor nicht, zumindest nicht ohne gewissen Aufwand. Um die lokale Historie vor unnötigen Merge-Commits zu bewahren und die Historie linear zu halten, ist generell manuelles Cherry-Picking zu empfehlen.
 
-Da sich auch eine Automatisierung mit Hilfe von Migit anbietet, um Forks automatisiert zu spiegeln, kann man so auf die direkte Verwendung der eigentlichen Repositories verzichten und stattdessen nur die konvertierten Spiegel-Versionen nutzen.
+Da sich auch eine Automatisierung mit Hilfe von Migit anbietet, um Forks automatisiert zu spiegeln, kann man so auf die direkte Verwendung der eigentlichen Repositorys verzichten und stattdessen nur die konvertierten Spiegel-Versionen nutzen.
 
-Migit setzt dabei auf das Tool "git-filter-repo" auf, um beliebige Unterordner von einem monolithischen Repository zurück in das ursprüngliche Repository-Modell zu recyclen. Es können auch ganze Repositories umgeschrieben werden.
+Migit setzt dabei auf das Tool `git-filter-repo` auf, um beliebige Unterordner von einem monolithischen Repository zurück in das ursprüngliche Repository-Modell zu recyclen. Es können auch ganze Repositories umgeschrieben werden.
 Commit-Messages werden so weit wie möglich mit gängigen Formatkonventionen umgeschrieben bzw. ergänzt, Commit-ID's werden angepasst und, falls erforderlich, werden die ursprünglichen Inhalte der Commits ergänzend eingepflegt. Es werden Verweise auf die Quellcommits zu den Quell-Repositoryss in die umgeschriebenen Commits eingefügt, was eine bessere Nachvollziebarkeit z.B. von Cherry-Picks gewährleistet. Die extrahierten Repositories werden dem Namen nach entsprechend in einen Deploy-Ordner und als Backup mit Zeitstempel als separate Repositorys abgelegt. Beim Deploy-Vorgang wird zudem immer ein Symlink ohne Zeitstempel auf das zuletzt extrahierte Repository angelegt. Die so erzeugten Repositorys können beispielsweise automatisiert als Spiegel oder je nach Bedarf weiterverarbeitet werden. 
 
 Ein Problem besteht allerdings unverändert darin, dass Forkbetreiber möglicherweise, um es sich vermeintlich einfach zu machen, nur Merges auf die Original-Submodule verwendet haben, was möglicherweise sogar automatisiert oder scriptgestützt erledigt wurde oder die Repositorys wurden irgendwann willkürlich von einem beliebigen Versionsstand initialisiert. Dadurch ensteht auf Dauer zwangsläufig eine komplexe Unordnung in der Historie der Forks. Dazu kann sich noch schlampige Commitkultur gesellen und dagegen ist leider nicht wirklich ein Kraut gewachsen, so das sich diese Commits inhaltlich nur beschränkt optimieren lassen. Leider lässt sich diese Unordnung bei der Rückportierung, wenn überhaupt, nur teilweise beheben, indem leere oder entartete Commits entfernt werden und sich diese zumindest chronologisch einordnen lassen und einige gängige Formatkonventionen angewendet werden.
@@ -24,7 +26,7 @@ Ein Problem besteht allerdings unverändert darin, dass Forkbetreiber möglicher
 
 ## Voraussetzungen
 
-Das Skript erfordert das Tool git-filter-repo. Stelle sicher, dass es installiert ist. Siehe: https://github.com/newren/git-filter-repo#how-do-i-install-it
+Das Skript erfordert das Tool `git-filter-repo`. Stelle sicher, dass es installiert ist. Siehe: https://github.com/newren/git-filter-repo#how-do-i-install-it
 ```bash
   * git >= 2.24.0
   * python3 >= 3.5
