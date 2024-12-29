@@ -1,6 +1,6 @@
 #!/bin/bash
 MIGIT_NAME="$(basename "$0")"
-VERSION="0.9.29"
+VERSION="0.9.36"
 VERSION_STRING="$VERSION Copyright (C) 2023-2024 Thilo Graf, License: GPL2"
 
 EXEC_CALL="$0 $@"
