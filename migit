@@ -45,13 +45,16 @@ GIT_FILTER_REPO_EXEC=$(which git-filter-repo)
 ERRORS=""
 WARNINGS=""
 NOTES=""
+generated_repos=""
 
 # Defaults for origin commit URL web-links
 GIT_SRC_COMMIT_URL_PREFIX=""
 GIT_SRC_COMMIT_URL_SUFFIX=""
 GIT_ORIGIN_COMMIT_URL_BASE=
 
+###############################################################################
 # Function to display script help
+###############################################################################
 show_help() {
 	echo
 	echo " ------------------------------------------------------------------"
@@ -121,10 +124,12 @@ show_help() {
 	echo "  Global:"
 	echo "  -v, --version                           Show $MIGIT_NAME version"
 	echo "  -h, --help                              Show this help"
-	echo "  -q                                      Don't show progress"
+	echo "  -q                                      Do not show progress."
 }
 
-# Validate git-filter-repo
+###############################################################################
+# Validate if git-filter-repo is installed
+###############################################################################
 if [ -z "$GIT_FILTER_REPO_EXEC" ]; then
 	echo " -------------------------------------------------------------------"
 	echo " $GIT_FILTER_REPO_NAME is not installed."
@@ -147,7 +152,9 @@ LONGOPTIONS_OBSOLETE=,pattern-source-url:
 OPTIONS+=$OPTIONS_OBSOLETE
 LONGOPTIONS+=$LONGOPTIONS_OBSOLETE
 
-# Parse options
+###############################################################################
+# Parse options with getopt
+###############################################################################
 PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@")
 if [ $? != 0 ]; then
 	# getopt returned an error
@@ -157,7 +164,7 @@ fi
 # Evaluate parsed argument strings
 eval set -- "$PARSED"
 
-# run through options
+# Walk through options
 while true; do
 	case "$1" in
 		-u)
@@ -299,28 +306,30 @@ while true; do
 	esac
 done
 
-## logging for quiet mode
+###############################################################################
+# If quiet mode is on, log minimal info
+###############################################################################
 if [[ "$NO_PROGRESS" == "$TRUE" ]]; then
 	echo -e "------------------------------------------"
 	echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] [$EXEC_CALL]"
 fi
 
-## Function to handle exit behavior
+###############################################################################
+# Function to handle script exit with desired behavior
+###############################################################################
 my_exit() {
-	# set exit-Code as Parameter
 	local exit_code=$1
-
 	if [[ "$NO_PROGRESS" == "$TRUE" ]]; then
-		# only if the script is used in quiet mode within automation, e.g. in cron jobs
+		# Only exit code 0 if in quiet mode
 		exit 0
 	else
-		# required exit code
 		exit $exit_code
 	fi
 }
 
-## Check if the required options are provided
-## Check clone url
+###############################################################################
+# Check if the required clone URL is provided
+###############################################################################
 if [[ -z "$GIT_SOURCE_URL" ]]; then
 	echo "Clone URL was not specified."
 	show_help
@@ -331,57 +340,70 @@ elif [[ "$GIT_SOURCE_URL" == file:* ]]; then
 fi
 
 # get absolute path of the current script
-SCRIPT_DIR=$(realpath $(dirname "$0"))
+SCRIPT_DIR=$(realpath "$(dirname "$0")")
 
+###############################################################################
 # Extract the absolute path from GIT_SOURCE_URL if it's a local path
+###############################################################################
 if [[ "$GIT_SOURCE_URL" == file://* ]]; then
-	# Removes 'file://' and converts to an absolute path, this is already handled, but here only for completeness
 	GIT_REPO_PATH=$(realpath "${GIT_SOURCE_URL:7}")
 elif [[ "$GIT_SOURCE_URL" == /* ]]; then
-	# Converts to an absolute path
 	GIT_REPO_PATH=$(realpath "$GIT_SOURCE_URL")
 elif [[ "$GIT_SOURCE_URL" == ./* || "$GIT_SOURCE_URL" == ./ ]]; then
-	# Converts to an absolute path, if `./` or a path within it is used
 	GIT_REPO_PATH=$(realpath "$GIT_SOURCE_URL")
 else
-	# Sets the path to empty if it's not a local file URL
+	# it's not a local path
 	GIT_REPO_PATH=""
 fi
 
-# Check if GIT_REPO_PATH is within SCRIPT_DIR
-if [[ "$GIT_REPO_PATH" == "$SCRIPT_DIR"* ]]; then
-	echo "Error: The specified git URL ('$GIT_SOURCE_URL') is located within the script's directory or its subdirectories. Please specify a different URL."
+# Check if GIT_REPO_PATH is within the script's directory
+if [[ -n "$GIT_REPO_PATH" && "$GIT_REPO_PATH" == "$SCRIPT_DIR"* ]]; then
+	echo "Error: The specified git URL ('$GIT_SOURCE_URL') is located within the script's directory. Please use a different URL."
 	my_exit 1
 fi
 
-## Create deploy directory
-mkdir -p $DEPLOY_DIR
+###############################################################################
+# Create deploy directory if not existing
+###############################################################################
+mkdir -p "$DEPLOY_DIR"
 
-
-## Set temporarily origin clone dir
-GIT_TEMP_REPO="${WORKDIR}/${ORIGIN_REPO_NAME}_$(basename ${GIT_REPO_PATH})"
-
-## Get the original repository, delete it if already exists, it must be fresh
-if [ -d $GIT_TEMP_REPO/.git ]; then
-	rm -rf $GIT_TEMP_REPO 
+###############################################################################
+# Set GIT_TEMP_REPO based on GIT_REPO_PATH; fallback if empty to avoid
+# 'basename: missing operand' errors
+###############################################################################
+if [ -n "$GIT_REPO_PATH" ]; then
+	TEMP_BASENAME=$(basename "$GIT_REPO_PATH")
+	GIT_TEMP_REPO="${WORKDIR}/${ORIGIN_REPO_NAME}_${TEMP_BASENAME}"
+else
+	GIT_TEMP_REPO="${WORKDIR}/${ORIGIN_REPO_NAME}"
 fi
 
-## Function to replace the echo command, for usage with the -q optiom
-function my_echo() {
+# If the temporary repo folder already exists, remove it
+if [ -d "$GIT_TEMP_REPO/.git" ]; then
+	rm -rf "$GIT_TEMP_REPO"
+fi
+
+###############################################################################
+# Function that replaces echo; removes ANSI colors in quiet mode
+###############################################################################
+my_echo() {
 	if [ "$NO_PROGRESS" == "$FALSE" ]; then
 		echo "${@}"
 	else
+		# If quiet, strip color codes
 		echo "${@}" | sed -r "s/\x1B\[[0-9;]*[a-zA-Z]//g"
 	fi
 }
 
-## Function to display a spinner while a process is running
-function show_spinner() {
+###############################################################################
+# Function to display a spinner while a process is running in the background
+###############################################################################
+show_spinner() {
 	local pid="$1"
 	local message="$2"
 	local spinner="/-\|"
 
-	while kill -0 $pid 2>/dev/null; do
+	while kill -0 "$pid" 2>/dev/null; do
 		for i in $(seq 0 3); do
 			if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 				my_echo -ne "\r[${spinner:$i:1}] ${message}"
@@ -390,10 +412,10 @@ function show_spinner() {
 		done
 	done
 
-	wait $pid
+	wait "$pid"
 	local error_code=$?
 
-	if [ $? -eq 0 ]; then
+	if [ "$error_code" -eq 0 ]; then
 		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 			my_echo -ne "\r[\e[32m✓\e[0m] ${message}\n"
 		fi
@@ -402,10 +424,12 @@ function show_spinner() {
 	fi
 }
 
-# get start time
+# get start time for performance measurement
 start=$(date +%s)
 
-# clone...
+###############################################################################
+# Clone the repository
+###############################################################################
 if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 	my_echo -n "[ ] Clone: $GIT_SOURCE_URL"
 fi
@@ -419,9 +443,11 @@ handle_clone_error() {
 	my_exit 1
 }
 
+# If no SSH key is specified, do a normal git clone
 if [[ "$GIT_SSH_KEYFILE" == "" ]]; then
 	clone_repo &
 else
+	# If SSH key is specified, check if file exists
 	if [ -f "$GIT_SSH_KEYFILE" ]; then
 		GIT_SSH_COMMAND="ssh -i $GIT_SSH_KEYFILE" clone_repo &
 	else
@@ -429,19 +455,23 @@ else
 		my_exit 1
 	fi
 fi
+
 spinner_pid=$!
 show_spinner $spinner_pid "Clone"
-wait $!  # wait for background process
+
+# Do not wait again on $!, show_spinner already waits for $pid
 if [[ $? -ne 0 ]]; then
-    handle_clone_error
+	handle_clone_error
 fi
 
-
-# pull branches...
+###############################################################################
+# Pull all relevant branches from origin, create local branches if missing
+###############################################################################
 local_branches=$(git -C "$GIT_TEMP_REPO" branch | sed 's/\*//g' | awk '{$1=$1};1')
 
 git -C "$GIT_TEMP_REPO" branch -r | grep -v '\->' | while read remote; do
 	branch_name="${remote#origin/}"
+	# If BRANCH_LIST is empty or matches the branch_name
 	if [[ -z "$BRANCH_LIST" ]] || echo "$BRANCH_LIST" | grep -qw "$branch_name"; then
 		if ! echo "$local_branches" | grep -q "^$branch_name$"; then
 			if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
@@ -454,85 +484,89 @@ git -C "$GIT_TEMP_REPO" branch -r | grep -v '\->' | while read remote; do
 	fi
 done
 
-
-# Cleanup if necessary
-if [ -d $GIT_WORKING_COPY_DIR ]; then
-	rm -rf $GIT_WORKING_COPY_DIR
+###############################################################################
+# Remove old working copy if it exists, then copy from the original repo
+###############################################################################
+if [ -d "$GIT_WORKING_COPY_DIR" ]; then
+	rm -rf "$GIT_WORKING_COPY_DIR"
 fi
 
-# Create a working copy from the original repo
-cp -rf $GIT_TEMP_REPO $GIT_WORKING_COPY_DIR
+cp -rf "$GIT_TEMP_REPO" "$GIT_WORKING_COPY_DIR"
 
 # Switch to the temporary repository
-cd $GIT_TEMP_REPO
+cd "$GIT_TEMP_REPO"
 
-# Create a repository list for subdirectories to be imported.
-# If the list is empty, all subdirectories of the first level will be added.
+###############################################################################
+# Create a repository list for subdirectories to be extracted
+# If no subdir was set, take all first-level folders
+###############################################################################
 if [[ -z "$REPOLIST" ]]; then
-	REPOLIST=$(ls -d */ | sed 's#/##')
+	REPOLIST=$(ls -d */ 2>/dev/null | sed 's#/##')
 fi
 
-## Handle Exclude List
-# Remove entries from EXCLUDE_REPOLIST from REPOLIST
+# Remove entries from EXCLUDE_REPOLIST if present
 for entry in $EXCLUDE_REPOLIST; do
 	REPOLIST=$(my_echo "$REPOLIST" | sed "s|$entry|""|g")
 done
-## end Exclude List
 
-## set project name
+###############################################################################
+# If target project name is not specified, derive it from the clone URL
+###############################################################################
 if [[ "$GIT_PROJECT_NAME" == "" ]]; then
-	GIT_PROJECT_NAME=$(basename $GIT_SOURCE_URL | sed 's/\.git//')
+	GIT_PROJECT_NAME=$(basename "$GIT_SOURCE_URL" | sed 's/\.git//')
 fi
 
-
-## Clean up older project symlink before create new link to latest result
+###############################################################################
+# Clean older symlink if present, and remove older repos if backups are disabled
+###############################################################################
 if [[ -e "$DEPLOY_DIR/$GIT_PROJECT_NAME" ]]; then
-	unlink $DEPLOY_DIR/$GIT_PROJECT_NAME
+	unlink "$DEPLOY_DIR/$GIT_PROJECT_NAME"
 fi
 
-## remove older deployed project repos if backups are disabled
 if [[ "$NO_BACKUPS" == "$TRUE" ]]; then
-	rm -rf $DEPLOY_DIR/$GIT_PROJECT_NAME-*
+	rm -rf "$DEPLOY_DIR/$GIT_PROJECT_NAME-"*
 fi
 
-## preset url prefix for source commit
+###############################################################################
+# If no prefix is set, add a default suffix '/commit'
+###############################################################################
 if [[ "$GIT_SRC_COMMIT_URL_PREFIX" == "" ]]; then
 	GIT_SRC_COMMIT_URL_SUFFIX="/commit"
 fi
 
-## preset url prefix for source commit
 if [[ "$GIT_SRC_COMMIT_URL_PREFIX" == "" ]]; then
-	GIT_PROJECT_NAME=$(basename $GIT_SOURCE_URL | sed 's/\.git//')
+	GIT_PROJECT_NAME=$(basename "$GIT_SOURCE_URL" | sed 's/\.git//')
 	url="$GIT_SOURCE_URL"
-	# Entfernen von .git
 	GIT_SRC_COMMIT_URL_PREFIX="${url%\.git}"
 fi
 
-## check preset url prefix for source commit
 GIT_ORIGIN_COMMIT_URL_BASE="${GIT_SRC_COMMIT_URL_PREFIX}${GIT_SRC_COMMIT_URL_SUFFIX}"
+
+###############################################################################
+# Check the prefix URL (http/s) by calling wget --spider
+###############################################################################
 if [[ "$GIT_SRC_COMMIT_URL_PREFIX" == *"@"* ]]; then
-	# git or ssh is not usable
+	# If there's an @ sign, assume SSH-based or invalid for http calls
 	wget_exit_stat=7
 else
-	# get output of wget into variable
 	wget_output=$(wget --spider "${GIT_ORIGIN_COMMIT_URL_BASE}" 2>&1)
 	wget_exit_stat=$?
 	spinner_pid=$!
 	show_spinner $spinner_pid "Check for URL source commit prefix URL: \e[1m${GIT_ORIGIN_COMMIT_URL_BASE}\e[0m ..."
 
-	# check for 301 Moved Permanently in wget_output
+	# Check if error is 301 and treat it as success
 	if [ $wget_exit_stat -ne 0 ]; then
 		if echo "$wget_output" | grep -q "301 Moved Permanently"; then
-			# Behandle 301 als Erfolg
 			wget_exit_stat=0
 		fi
 	fi
 fi
+
 if [ $wget_exit_stat -ne 0 ]; then
 	if [ $wget_exit_stat -eq 7 ]; then
-		err_desc="An error occurred in the protocol or in supporting a protocol. Use URL's with http:// or https:// only!"
+		err_desc="An issue with the protocol. Use URLs with http:// or https:// only!"
 	elif [ $wget_exit_stat -eq 8 ]; then
-		err_desc="Set Parameter -P to set a valid source commit prefix for source commits."
+		err_desc="Set parameter -P for a valid commit prefix URL."
 	elif [ $wget_exit_stat -eq 1 ]; then
 		err_desc=""
 	else
@@ -540,61 +574,57 @@ if [ $wget_exit_stat -ne 0 ]; then
 	fi
 
 	WARN_ORIG_COMMIT="Check for URL source commit prefix failed! URL: [\e[33m${GIT_ORIGIN_COMMIT_URL_BASE}\e[0m]"
-
 	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 		my_echo -ne "\e[1A[\e[33m!\e[0m] Warning! $WARN_ORIG_COMMIT\n"
 	fi
-
 	WARNINGS+=" - $WARN_ORIG_COMMIT\n   Entry of the origin commits was skipped. $err_desc\n"
-
 	GIT_ORIGIN_COMMIT_URL_BASE=""
 fi
 
-
-## set time stamp
+###############################################################################
+# Create a timestamp-based folder inside the deploy directory
+###############################################################################
 TIME_STAMP="$(date +%Y-%m%d-%H%M%S)"
+mkdir -p "$DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP"
 
-## create result directory inside deploy directory
-mkdir -p $DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP
-
-## start rewriting
+###############################################################################
+# Start rewriting each subdirectory
+###############################################################################
 for SUBDIR in $REPOLIST; do
-	# Ensure a fresh working copy is available because it won't exist after the loop
-	cp -rf $GIT_TEMP_REPO $GIT_WORKING_COPY_DIR
+	# Copy fresh working copy each loop
+	cp -rf "$GIT_TEMP_REPO" "$GIT_WORKING_COPY_DIR"
 
-	# Ensure we are in the working copy
-	cd $GIT_WORKING_COPY_DIR
+	cd "$GIT_WORKING_COPY_DIR"
 
-	# ...set repo name if only origin is output
+	# If SUBDIR=".", the repo name is derived from the original repo name
 	if [[ "$SUBDIR" == "." ]]; then
-		# Create the original repo name from the original clone URL
-		# Remove .git extension from URL
 		GIT_SOURCE=$(my_echo "$GIT_SOURCE_URL" | sed 's/\.git$//')
-		REPO_NAME="${TARGET_REPO_PREFIX}$(basename ${GIT_SOURCE})${TARGET_REPO_SUFFIX}"
+		REPO_NAME="${TARGET_REPO_PREFIX}$(basename "${GIT_SOURCE}")${TARGET_REPO_SUFFIX}"
 	else
-		# Assemble the target folder name. This is the repo that will be generated from the subdirectory.
-		REPO_NAME="${TARGET_REPO_PREFIX}$(basename ${SUBDIR})${TARGET_REPO_SUFFIX}"
+		# Otherwise, repo name is derived from the subdirectory
+		REPO_NAME="${TARGET_REPO_PREFIX}$(basename "${SUBDIR}")${TARGET_REPO_SUFFIX}"
 	fi
 
 	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 		my_echo -n "[ ] Rewriting ${REPO_NAME}"
 	fi
 
-	if [ ! -d $SUBDIR ]; then
+	# If subdirectory doesn't exist and isn't ".", throw an error
+	if [ ! -d "$SUBDIR" ] && [ "$SUBDIR" != "." ]; then
 		ERR_NOSUBDIR="$SUBDIR not found!"
 		my_echo -ne "\r[\e[33m✗\e[0m] Error: $ERR_NOSUBDIR\n"
 		ERRORS+=" - $ERR_NOSUBDIR"
 		continue
 	fi
 
+	# Set path rename so that $SUBDIR is rewritten to the root in the new repo
 	PATH_OPTION="--path $SUBDIR --target . --path-rename $SUBDIR/:"
 	if [[ "$SUBDIR" == "." ]]; then
 		PATH_OPTION=
 	fi
 
 	MAILMAP_OPTION=""
-
-	if [ -f $MAILMAP_FILE ]; then
+	if [ -f "$MAILMAP_FILE" ]; then
 		MAILMAP_OPTION="--mailmap $MAILMAP_FILE"
 	else
 		if [[ "$MAILMAP_FILE" != "" ]]; then
@@ -604,19 +634,19 @@ for SUBDIR in $REPOLIST; do
 		fi
 	fi
 
-	COMMIT_OPTIONS="$REPLACE_REVS  $PRUNE_EMPTY $PRUNE_DEGENERATE $NO_FF"
+	COMMIT_OPTIONS="$REPLACE_REVS $PRUNE_EMPTY $PRUNE_DEGENERATE $NO_FF"
+	GIT_FILTER_REPO_OPTS="--force $MAILMAP_OPTION $PATH_OPTION --source $GIT_TEMP_REPO $COMMIT_OPTIONS"
 
-	GIT_FILTER_REPO_OPTS="--force  $MAILMAP_OPTION $PATH_OPTION --source $GIT_TEMP_REPO $COMMIT_OPTIONS"
-# 	 my_echo "$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS"
-# 	 exit 0
-
-	# Adjust commit messages, include origin data, and normalize author names with emails
+	# If commit messages should not be modified
 	if [[ "$MESSAGES_REWRITE" != "$TRUE" ]]; then
 		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS > /dev/null 2>&1 &
 		spinner_pid=$!
-		show_spinner ${spinner_pid} "Rewriting ${REPO_NAME}"
+		show_spinner $spinner_pid "Rewriting ${REPO_NAME}"
 		NOTES+=" - Commit messages not rewritten"
 	else
+		############################################################################
+		# If rewriting commit messages, we use commit-callback
+		############################################################################
 		$GIT_FILTER_REPO_EXEC $GIT_FILTER_REPO_OPTS --commit-callback '
 		import datetime
 		import re
@@ -624,7 +654,7 @@ for SUBDIR in $REPOLIST; do
 
 		workdir = os.environ["WORKDIR"]
 
-		# Reset commit messages
+		# If --reset is set, remove lines containing "Origin commit data"
 		if "'"$RESET"'" == "1":
 		    pattern = b"Origin commit data.*(\n.*)*"
 		    commit.message = re.sub(pattern, b"", commit.message, flags=re.DOTALL)
@@ -632,9 +662,7 @@ for SUBDIR in $REPOLIST; do
 		        file.write("Commit messages have been reset.")
 		    return
 
-		# Check if the commit message already contains the tag "Origin commit data"
-		# Skip rewriting for this commit as it is already been processed
-		# Convert byte string to normal string for comparison
+		# If commit message already contains "Origin commit data", skip rewriting
 		origin_tmp = commit.message.decode("utf-8")
 		if "Origin commit data" in origin_tmp:
 		    with open(f"{workdir}/.rewrite", "w") as file:
@@ -646,55 +674,62 @@ for SUBDIR in $REPOLIST; do
 		origin_message_length = len(origin_message)
 
 		# Add an empty line
-		commit.message = commit.message + b"\n\n" \
+		commit.message += b"\n\n"
 
-		# Generate new message data
-		# Determine and add the branch
+		# Add some data about the original commit
 		commit.message += b"Origin commit data\n------------------\n"
-		b"Branch: " + b"'$(git symbolic-ref HEAD)'" + b"\n"
 
-		# Add the link to the source commit
+		# This line will literally insert the bash code
+		commit.message += b"Branch: " + b"$(git symbolic-ref HEAD)" + b"\n"
+
+		# If GIT_ORIGIN_COMMIT_URL_BASE is not empty, add the link to the commit
 		if "'"$GIT_ORIGIN_COMMIT_URL_BASE"'" != "":
 		    commit.message += b"Commit: '"$GIT_ORIGIN_COMMIT_URL_BASE"'/" + commit.original_id + b"\n"
 
-		# Add author, date, and origin message
-		commit.message += b"Author: " + commit.author_name + b" <" + commit.author_email + b">\n" + \
-		b"Date:   " + (datetime.datetime.fromtimestamp(int(commit.author_date.split()[0])).strftime("%Y-%m-%d (%a, %d %b %Y)") + "\n").encode() + \
-		b"\n"
+		# Insert author name, email, date
+		commit.message += (
+		    b"Author: " + commit.author_name + b" <" + commit.author_email + b">\n"
+		    + b"Date:   "
+		    + (datetime.datetime.fromtimestamp(int(commit.author_date.split()[0]))
+		       .strftime("%Y-%m-%d (%a, %d %b %Y)") + "\n").encode()
+		    + b"\n"
+		)
 
-		# Clean up, remove unnecessary characters
+		# Clean up repeated spaces, asterisks, dashes
 		commit.message = commit.message.replace(b"   ", b" ")
 		commit.message = commit.message.replace(b"  ", b" ")
-		commit.message = commit.message.lstrip(b"-");
-		commit.message = commit.message.lstrip(b"*");
-		commit.message = commit.message.lstrip(b" ");
+		commit.message = commit.message.lstrip(b"-")
+		commit.message = commit.message.lstrip(b"*")
+		commit.message = commit.message.lstrip(b" ")
 
-		# Check the first chars. if rigin_message is not in commit.message, if not, then append origin message
+		# If the original message does not match the start, include it below
 		if origin_message != commit.message[:origin_message_length]:
 		    commit.message += b"Origin message was:\n------------------\n" + origin_message
 
-		# Adjust the introduction
+		# If rewriting a real subdir, remove it from the first line, and prefix
 		if "'"$SUBDIR"'" != ".":
 		    commit.message = commit.message.replace(b"'"$SUBDIR"':", b"")
-		    commit.message = b"'$(basename $SUBDIR)': " + commit.message
+		    commit.message = b"'"$(basename $SUBDIR)"': " + commit.message
 
-		# Append the specified message if only a single commit introduction exists and no further additions
+		# If the original message had only one line, add a note
 		if origin_message.count(b"\n") == 1:
-		    commit.message += b"\n------------------\nNo further description and justification available within origin commit message!"
+		    commit.message += (
+		        b"\n------------------\nNo further description and justification available within origin commit message!"
+		    )
 
+		# If a commit suffix was specified, append it
 		if "'"$GIT_COMMIT_SUFFIX"'" != "":
 		    commit.message += b"\n\n------------------\n'"$GIT_COMMIT_SUFFIX"'"
 
-		# Final cleanup and finish, references will be cleaned up from the history as well
 		commit.message = commit.message.replace(b"  ", b" ")
 		'  > /dev/null 2>&1 &
 
 		spinner_pid=$!
-		show_spinner ${spinner_pid} "Rewriting ${REPO_NAME}"
+		show_spinner $spinner_pid "Rewriting ${REPO_NAME}"
 
-		# read information from file
+		# If .rewrite file was created, read the info
 		if [[ -f "$WORKDIR/.rewrite" ]]; then
-			read_data=$(< ${WORKDIR}/.rewrite)
+			read_data=$(< "${WORKDIR}/.rewrite")
 			if [[ "$RESET" == "$FALSE" ]]; then
 				if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 					my_echo -e "\r[\e[33m!\e[0m] Warning! ${read_data}"
@@ -703,53 +738,57 @@ for SUBDIR in $REPOLIST; do
 			else
 				my_echo -e "\r[\e[32m✓\e[0m] Reset: ${read_data}"
 			fi
-			rm -f $WORKDIR/.rewrite
+			rm -f "$WORKDIR/.rewrite"
 		fi
 	fi
-	
-	# Cleanup
+
+	############################################################################
+	# Cleanup: remove the .origin-tmp directory inside the working copy
+	############################################################################
 	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 		my_echo -n "[ ] Clean up "
 	fi
-	rm -rf $GIT_WORKING_COPY_DIR/$ORIGIN_REPO_NAME
+	rm -rf "$GIT_WORKING_COPY_DIR/$ORIGIN_REPO_NAME"
 	if [ $? -eq 0 ]; then
 		if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 			my_echo -ne "\r[\e[32m✓\e[0m] Clean up \n"
 		fi
 	else
-		my_echo -ne "\r[\e[33m✗\e[0m] Error!\n"
 		error_code=$?
-		my_echo -ne "\r[\e[33m✗\e[0m] Error: $error_code"
-		$ERRORS+="$error_code - $error_description"
+		my_echo -ne "\r[\e[33m✗\e[0m] Error: $error_code\n"
+		ERRORS+="$error_code - Cleanup error"
 		break
 	fi
-	
-	cd $WORKDIR
 
-	## Prepare and move everything into the deploy directory...
+	############################################################################
+	# Move the working copy to the deployment folder
+	############################################################################
+	cd "$WORKDIR"
+
 	if [[ "$NO_PROGRESS" == "$FALSE" ]]; then
 		my_echo -n "[ ] Deploy"
 	fi
 
-	# ...move results from working directory into project directory	
-	mv $GIT_WORKING_COPY_DIR $DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP/$REPO_NAME
-
+	mv "$GIT_WORKING_COPY_DIR" "$DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP/$REPO_NAME"
 	if [ $? -eq 0 ]; then
 		my_echo -ne "\r[\e[32m✓\e[0m] Deploy: Rewritten repository saved in [\e[1m$DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP/$REPO_NAME\e[0m]\n"
 		generated_repos+=" - $REPO_NAME\n"
 	else
-		my_echo -ne "\r[\e[33m✗\e[0m] Error!\n"
 		error_code=$?
-		my_echo -ne "\r[\e[33m✗\e[0m] Error: $error_code"
-		$ERRORS+="$error_code - $error_description"
+		my_echo -ne "\r[\e[33m✗\e[0m] Error: $error_code\n"
+		ERRORS+="$error_code - Move to deploy folder"
 		break
 	fi
 done
 
-## Finally create symlink which is pointing to last created project name.
-ln -sf $DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP $DEPLOY_DIR/$GIT_PROJECT_NAME
+###############################################################################
+# Finally, create a symlink pointing to the last created project name
+###############################################################################
+ln -sf "$DEPLOY_DIR/$GIT_PROJECT_NAME-$TIME_STAMP" "$DEPLOY_DIR/$GIT_PROJECT_NAME"
 
-## show results
+###############################################################################
+# Show results and any notes, warnings or errors
+###############################################################################
 entry_count=$(grep -o ' - ' <<< "$generated_repos" | wc -l)
 my_echo -e
 my_echo "Processed repositories: $entry_count"
@@ -767,7 +806,6 @@ if [[ "$WARNINGS" != "" ]]; then
 	my_echo -e
 	my_echo -e "$WARNINGS"
 fi
-#TODO: Errors are not yet listed
 if [[ "$ERRORS" != "" ]]; then
 	my_echo -e "------------------------------------------"
 	my_echo -e "\e[31mErrors:\e[0m"
@@ -775,8 +813,7 @@ if [[ "$ERRORS" != "" ]]; then
 	my_echo -e "$ERRORS"
 fi
 
-
-# get end time
+# get end time for duration
 end=$(date +%s)
 duration=$((end - start))
 minutes=$((duration / 60))
