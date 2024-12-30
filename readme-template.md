@@ -1,6 +1,6 @@
 # Script zur Extraktion und Umschreibung von Git-Repositories
 
-Version: 0.9.37
+Version: 0.9.39
 
 Das Hauptziel dieses Skripts war es, die Struktur von originalen Repositorys wiederherzustellen, welche ursprünglich als Submodule betrieben werden, aber von Forkbetreibern in monolithische Monster-Repositories umgewandelt wurden. Solche Workflows machen Rückführungen von Änderungen aus solchen Forks quasi unmöglich oder sind nur sehr umständlich via Merge, Rebase oder Cherry-Pick umsetzbar.
 
