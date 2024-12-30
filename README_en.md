@@ -5,7 +5,7 @@
 
 # Script for extracting and rewriting Git repositories
 
-Version: 0.9.36
+Version: 0.9.39
 
 The main goal of this script was to restore the structure of original repositories, which were originally operated as submodules but were converted into monolithic monster repositories by fork operators. Such workflows make it virtually impossible to revert changes from such forks or can only be implemented with great difficulty via merge, rebase or cherry pick.
 
