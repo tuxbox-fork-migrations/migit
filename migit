@@ -680,7 +680,7 @@ for SUBDIR in $REPOLIST; do
 		commit.message += b"Origin commit data\n------------------\n"
 
 		# This line will literally insert the bash code
-		commit.message += b"Branch: " + b"$(git symbolic-ref HEAD)" + b"\n"
+		commit.message += b"Branch: " + b"'$(git symbolic-ref --short HEAD)'" + b"\n"
 
 		# If GIT_ORIGIN_COMMIT_URL_BASE is not empty, add the link to the commit
 		if "'"$GIT_ORIGIN_COMMIT_URL_BASE"'" != "":
