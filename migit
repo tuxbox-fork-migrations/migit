@@ -1,6 +1,6 @@
 #!/bin/bash
 MIGIT_NAME="$(basename "$0")"
-VERSION="0.9.39"
+VERSION="0.9.40"
 VERSION_STRING="$VERSION Copyright (C) 2023-2024 Thilo Graf, License: GPL2"
 
 EXEC_CALL="$0 $@"
@@ -90,7 +90,9 @@ show_help() {
 	echo "  -T, --target-root-project-name=<NAME>   Name of the target folder within the deploy directory. Default: Current date and time of the rewrite."
 	echo
 	echo "  Commit messages:"
-	echo "  -n, --no-rewrite-messages               Commit messages will be not touched, but paths will still be rewritten, and if a .mailmap file is available, authors will also be rewritten."
+	echo "  -n, --no-rewrite-messages               Commit messages will not be touched, but paths will still be rewritten, and if a .mailmap file is available, authors will also be rewritten."
+	echo "                                          When using -n, no commit introduction is added, even without specifying --commit-introduction."
+	echo "                                          When using -n, no commit introduction is added, even without specifying --commit-introduction."
 	echo "  -P, --prefix-source-url=<PREFIX>        Prefix for the source commit URL. This sets the prefix for the link to the source commit, which is prepended to the commit ID."
 	echo "      --suffix-source-url=<SUFFIX>        Suffix for the source commit URL. This sets the suffix for the link to the source commit, which is apended to the prefix (option -P) commit ID. Default: '/commit'"
 	echo "	                                        Note: --pattern-source-url=<PATTERN>	Obsolete: The same like --prefix-source-url"
@@ -706,8 +708,14 @@ for SUBDIR in $REPOLIST; do
 		if origin_message != commit.message[:origin_message_length]:
 		    commit.message += b"Origin message was:\n------------------\n" + origin_message
 
-		# If rewriting a real subdir, remove it from the first line, and prefix
-		if "'"$SUBDIR"'" != ".":
+		# Only add commit introduction if GIT_COMMIT_INTRO is explicitly set
+		if "'"$GIT_COMMIT_INTRO"'" != "":
+		    # If rewriting a real subdir, remove it from the first line, and prefix
+		    if "'"$SUBDIR"'" != ".":
+		        commit.message = commit.message.replace(b"'"$SUBDIR"':", b"")
+		    commit.message = b"'"$GIT_COMMIT_INTRO"': " + commit.message
+		elif "'"$SUBDIR"'" != ".":
+		    # Only add subdirectory prefix if not in root and no explicit intro
 		    commit.message = commit.message.replace(b"'"$SUBDIR"':", b"")
 		    commit.message = b"'"$(basename $SUBDIR)"': " + commit.message
 
